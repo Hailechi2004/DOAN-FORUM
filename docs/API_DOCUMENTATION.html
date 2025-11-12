@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Company Forum API Documentation</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background: #f5f5f5;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      header {
+        background: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        font-size: 3rem;
+        color: #2c3e50;
+        margin-bottom: 10px;
+      }
+
+      .version-badges {
+        display: flex;
+        gap: 10px;
+        margin: 15px 0;
+      }
+
+      .badge {
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      .badge-api {
+        background: #6c757d;
+        color: white;
+      }
+
+      .badge-oas {
+        background: #85ea2d;
+        color: #333;
+      }
+
+      .subtitle {
+        color: #666;
+        font-size: 1.1rem;
+        margin: 15px 0;
+      }
+
+      .info-links {
+        margin: 20px 0;
+      }
+
+      .info-links a {
+        color: #007bff;
+        text-decoration: none;
+        display: block;
+        margin: 5px 0;
+      }
+
+      .info-links a:hover {
+        text-decoration: underline;
+      }
+
+      .section {
+        background: white;
+        padding: 30px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      h2 {
+        font-size: 1.8rem;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+      }
+
+      .server-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+      }
+
+      .server-url {
+        color: #0066cc;
+        font-family: "Courier New", monospace;
+        font-weight: 600;
+      }
+
+      .endpoint {
+        margin: 15px 0;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        overflow: hidden;
+      }
+
+      .endpoint-header {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background: #f8f9fa;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .endpoint-header:hover {
+        background: #e9ecef;
+      }
+
+      .method {
+        padding: 5px 15px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-right: 15px;
+        min-width: 70px;
+        text-align: center;
+      }
+
+      .method-get {
+        background: #61affe;
+        color: white;
+      }
+
+      .method-post {
+        background: #49cc90;
+        color: white;
+      }
+
+      .method-put {
+        background: #fca130;
+        color: white;
+      }
+
+      .method-delete {
+        background: #f93e3e;
+        color: white;
+      }
+
+      .method-patch {
+        background: #50e3c2;
+        color: white;
+      }
+
+      .endpoint-path {
+        font-family: "Courier New", monospace;
+        font-size: 1rem;
+        font-weight: 600;
+        flex: 1;
+      }
+
+      .endpoint-description {
+        color: #666;
+        font-size: 0.9rem;
+        margin-left: 15px;
+      }
+
+      .endpoint-details {
+        padding: 20px;
+        border-top: 1px solid #e9ecef;
+        display: none;
+      }
+
+      .endpoint.active .endpoint-details {
+        display: block;
+      }
+
+      .detail-section {
+        margin: 15px 0;
+      }
+
+      .detail-title {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+      }
+
+      .param-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0;
+      }
+
+      .param-table th {
+        background: #f8f9fa;
+        padding: 10px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid #dee2e6;
+      }
+
+      .param-table td {
+        padding: 10px;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .param-name {
+        font-family: "Courier New", monospace;
+        color: #e83e8c;
+        font-weight: 600;
+      }
+
+      .param-type {
+        color: #6f42c1;
+        font-size: 0.9rem;
+      }
+
+      .required {
+        color: #f93e3e;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      code {
+        background: #f8f9fa;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: "Courier New", monospace;
+        font-size: 0.9rem;
+      }
+
+      pre {
+        background: #2d2d2d;
+        color: #f8f8f2;
+        padding: 15px;
+        border-radius: 5px;
+        overflow-x: auto;
+        font-family: "Courier New", monospace;
+        font-size: 0.9rem;
+      }
+
+      .tag-auth {
+        background: #ff6b6b;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 0.8rem;
+        margin-left: 10px;
+      }
+
+      .category {
+        margin: 30px 0;
+      }
+
+      .category-title {
+        font-size: 1.5rem;
+        color: #495057;
+        margin: 20px 0;
+        padding: 10px 0;
+        border-bottom: 1px solid #dee2e6;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <h1>🏢 Company Forum API</h1>
+        <div class="version-badges">
+          <span class="badge badge-api">1.0.0</span>
+          <span class="badge badge-oas">OAS 3.0</span>
+        </div>
+        <p class="subtitle">
+          API Documentation for Company Forum System with Real-time Features
+        </p>
+        <div class="info-links">
+          <a href="mailto:support@company-forum.com">📧 Contact API Support</a>
+          <a href="#license">📄 MIT License</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="container">
+      <!-- Servers Section -->
+      <div class="section">
+        <h2>🌐 Servers</h2>
+        <div class="server-info">
+          <strong>Development Server</strong>
+          <p class="server-url">http://localhost:3000/api</p>
+          <p style="color: #666; margin-top: 5px">
+            Local development environment
+          </p>
+        </div>
+        <div class="server-info">
+          <strong>Production Server</strong>
+          <p class="server-url">https://api.company-forum.com/api</p>
+          <p style="color: #666; margin-top: 5px">
+            Production environment (Coming soon)
+          </p>
+        </div>
+      </div>
+
+      <!-- Authentication APIs -->
+      <div class="section">
+        <h2>🔐 Authentication</h2>
+        <div class="category">
+          <div class="category-title">Auth Endpoints</div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-post">POST</span>
+              <span class="endpoint-path">/auth/register</span>
+              <span class="endpoint-description">Register new user</span>
+            </div>
+            <div class="endpoint-details">
+              <div class="detail-section">
+                <div class="detail-title">Request Body</div>
+                <table class="param-table">
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">email</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="required">Yes</span></td>
+                    <td>User email address</td>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">username</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="required">Yes</span></td>
+                    <td>Unique username</td>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">password</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="required">Yes</span></td>
+                    <td>Password (min 6 characters)</td>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">full_name</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td>No</td>
+                    <td>User's full name</td>
+                  </tr>
+                </table>
+              </div>
+              <div class="detail-section">
+                <div class="detail-title">Response 201 - Success</div>
+                <pre>
+{
+  "success": true,
+  "message": "User registered successfully",
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "username": "johndoe",
+      "role": "user"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}</pre
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-post">POST</span>
+              <span class="endpoint-path">/auth/login</span>
+              <span class="endpoint-description">User login</span>
+            </div>
+            <div class="endpoint-details">
+              <div class="detail-section">
+                <div class="detail-title">Request Body</div>
+                <table class="param-table">
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">email</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="required">Yes</span></td>
+                    <td>User email or username</td>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">password</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="required">Yes</span></td>
+                    <td>User password</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-post">POST</span>
+              <span class="endpoint-path">/auth/logout</span>
+              <span class="endpoint-description">User logout</span>
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-get">GET</span>
+              <span class="endpoint-path">/auth/me</span>
+              <span class="endpoint-description">Get current user info</span>
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Posts APIs -->
+      <div class="section">
+        <h2>📝 Posts</h2>
+        <div class="category">
+          <div class="category-title">Post Management</div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-get">GET</span>
+              <span class="endpoint-path">/posts</span>
+              <span class="endpoint-description"
+                >Get all posts with pagination</span
+              >
+            </div>
+            <div class="endpoint-details">
+              <div class="detail-section">
+                <div class="detail-title">Query Parameters</div>
+                <table class="param-table">
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">page</span></td>
+                    <td><span class="param-type">integer</span></td>
+                    <td>No</td>
+                    <td>Page number (default: 1)</td>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">limit</span></td>
+                    <td><span class="param-type">integer</span></td>
+                    <td>No</td>
+                    <td>Items per page (default: 10)</td>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">category_id</span></td>
+                    <td><span class="param-type">integer</span></td>
+                    <td>No</td>
+                    <td>Filter by category</td>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">search</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td>No</td>
+                    <td>Search in title and content</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-get">GET</span>
+              <span class="endpoint-path">/posts/{id}</span>
+              <span class="endpoint-description">Get post by ID</span>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-post">POST</span>
+              <span class="endpoint-path">/posts</span>
+              <span class="endpoint-description">Create new post</span>
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+            <div class="endpoint-details">
+              <div class="detail-section">
+                <div class="detail-title">
+                  Request Body (multipart/form-data)
+                </div>
+                <table class="param-table">
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">title</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="required">Yes</span></td>
+                    <td>Post title</td>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">content</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="required">Yes</span></td>
+                    <td>Post content</td>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">category_id</span></td>
+                    <td><span class="param-type">integer</span></td>
+                    <td>No</td>
+                    <td>Category ID</td>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">visibility</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td>No</td>
+                    <td>public, private, company, department</td>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">images</span></td>
+                    <td><span class="param-type">file[]</span></td>
+                    <td>No</td>
+                    <td>Up to 10 images (max 50MB total)</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-put">PUT</span>
+              <span class="endpoint-path">/posts/{id}</span>
+              <span class="endpoint-description">Update post</span>
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-delete">DELETE</span>
+              <span class="endpoint-path">/posts/{id}</span>
+              <span class="endpoint-description">Delete post</span>
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="category">
+          <div class="category-title">Post Reactions</div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-post">POST</span>
+              <span class="endpoint-path">/posts/{id}/reactions</span>
+              <span class="endpoint-description"
+                >Add/Remove reaction to post</span
+              >
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+            <div class="endpoint-details">
+              <div class="detail-section">
+                <div class="detail-title">Request Body</div>
+                <table class="param-table">
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">reaction_type</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="required">Yes</span></td>
+                    <td>like, love, haha, wow, sad, angry</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comments APIs -->
+      <div class="section">
+        <h2>💬 Comments</h2>
+        <div class="category">
+          <div class="category-title">Comment Management</div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-get">GET</span>
+              <span class="endpoint-path">/comments/post/{post_id}</span>
+              <span class="endpoint-description">Get comments by post ID</span>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-post">POST</span>
+              <span class="endpoint-path">/comments</span>
+              <span class="endpoint-description">Create comment</span>
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+            <div class="endpoint-details">
+              <div class="detail-section">
+                <div class="detail-title">Request Body</div>
+                <table class="param-table">
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">post_id</span></td>
+                    <td><span class="param-type">integer</span></td>
+                    <td><span class="required">Yes</span></td>
+                    <td>Post ID</td>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">content</span></td>
+                    <td><span class="param-type">string</span></td>
+                    <td><span class="required">Yes</span></td>
+                    <td>Comment content (max 2000 chars)</td>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">parent_id</span></td>
+                    <td><span class="param-type">integer</span></td>
+                    <td>No</td>
+                    <td>Parent comment ID (for replies)</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-put">PUT</span>
+              <span class="endpoint-path">/comments/{id}</span>
+              <span class="endpoint-description">Update comment</span>
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-delete">DELETE</span>
+              <span class="endpoint-path">/comments/{id}</span>
+              <span class="endpoint-description">Delete comment</span>
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories APIs -->
+      <div class="section">
+        <h2>📁 Categories</h2>
+        <div class="category">
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-get">GET</span>
+              <span class="endpoint-path">/categories</span>
+              <span class="endpoint-description">Get all categories</span>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-post">POST</span>
+              <span class="endpoint-path">/categories</span>
+              <span class="endpoint-description">Create category</span>
+              <span class="tag-auth">🔒 Admin Only</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Departments APIs -->
+      <div class="section">
+        <h2>🏢 Departments</h2>
+        <div class="category">
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-get">GET</span>
+              <span class="endpoint-path">/departments</span>
+              <span class="endpoint-description">Get all departments</span>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-post">POST</span>
+              <span class="endpoint-path">/departments</span>
+              <span class="endpoint-description">Create department</span>
+              <span class="tag-auth">🔒 Admin Only</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users APIs -->
+      <div class="section">
+        <h2>👤 Users</h2>
+        <div class="category">
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-get">GET</span>
+              <span class="endpoint-path">/users</span>
+              <span class="endpoint-description">Get all users</span>
+              <span class="tag-auth">🔒 Admin Only</span>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-get">GET</span>
+              <span class="endpoint-path">/users/{id}</span>
+              <span class="endpoint-description">Get user by ID</span>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-put">PUT</span>
+              <span class="endpoint-path">/users/{id}</span>
+              <span class="endpoint-description">Update user profile</span>
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications APIs -->
+      <div class="section">
+        <h2>🔔 Notifications</h2>
+        <div class="category">
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-get">GET</span>
+              <span class="endpoint-path">/notifications</span>
+              <span class="endpoint-description">Get user notifications</span>
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-put">PUT</span>
+              <span class="endpoint-path">/notifications/{id}/read</span>
+              <span class="endpoint-description"
+                >Mark notification as read</span
+              >
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- File Upload APIs -->
+      <div class="section">
+        <h2>📤 File Upload</h2>
+        <div class="category">
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-post">POST</span>
+              <span class="endpoint-path">/upload/avatar</span>
+              <span class="endpoint-description">Upload user avatar</span>
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+            <div class="endpoint-details">
+              <div class="detail-section">
+                <div class="detail-title">
+                  Request Body (multipart/form-data)
+                </div>
+                <table class="param-table">
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                  </tr>
+                  <tr>
+                    <td><span class="param-name">avatar</span></td>
+                    <td><span class="param-type">file</span></td>
+                    <td><span class="required">Yes</span></td>
+                    <td>Image file (jpg, png, gif - max 5MB)</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint" onclick="toggleEndpoint(this)">
+            <div class="endpoint-header">
+              <span class="method method-post">POST</span>
+              <span class="endpoint-path">/upload/files</span>
+              <span class="endpoint-description">Upload files</span>
+              <span class="tag-auth">🔒 Auth Required</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WebSocket Events -->
+      <div class="section">
+        <h2>🔌 WebSocket Events</h2>
+        <div class="server-info">
+          <strong>WebSocket Server</strong>
+          <p class="server-url">ws://localhost:3000</p>
+          <p style="color: #666; margin-top: 5px">
+            Real-time communication via Socket.IO
+          </p>
+        </div>
+
+        <div class="category">
+          <div class="category-title">Events</div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method method-post" style="background: #9c27b0"
+                >EMIT</span
+              >
+              <span class="endpoint-path">connection</span>
+              <span class="endpoint-description"
+                >Connect to WebSocket server</span
+              >
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method method-get" style="background: #9c27b0"
+                >ON</span
+              >
+              <span class="endpoint-path">new_post</span>
+              <span class="endpoint-description"
+                >Receive new post notification</span
+              >
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method method-get" style="background: #9c27b0"
+                >ON</span
+              >
+              <span class="endpoint-path">new_comment</span>
+              <span class="endpoint-description"
+                >Receive new comment notification</span
+              >
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method method-get" style="background: #9c27b0"
+                >ON</span
+              >
+              <span class="endpoint-path">new_reaction</span>
+              <span class="endpoint-description"
+                >Receive new reaction notification</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Authentication Section -->
+      <div class="section">
+        <h2>🔐 Authentication</h2>
+        <div class="detail-section">
+          <div class="detail-title">JWT Token Authentication</div>
+          <p>
+            All protected endpoints require a JWT token in the Authorization
+            header:
+          </p>
+          <pre>Authorization: Bearer &lt;your-jwt-token&gt;</pre>
+          <p style="margin-top: 10px">
+            Token is returned upon successful login/register and expires after
+            24 hours.
+          </p>
+        </div>
+      </div>
+
+      <!-- Response Codes Section -->
+      <div class="section">
+        <h2>📊 Response Codes</h2>
+        <table class="param-table">
+          <tr>
+            <th>Code</th>
+            <th>Status</th>
+            <th>Description</th>
+          </tr>
+          <tr>
+            <td><code>200</code></td>
+            <td>OK</td>
+            <td>Request successful</td>
+          </tr>
+          <tr>
+            <td><code>201</code></td>
+            <td>Created</td>
+            <td>Resource created successfully</td>
+          </tr>
+          <tr>
+            <td><code>400</code></td>
+            <td>Bad Request</td>
+            <td>Invalid request parameters</td>
+          </tr>
+          <tr>
+            <td><code>401</code></td>
+            <td>Unauthorized</td>
+            <td>Authentication required or token invalid</td>
+          </tr>
+          <tr>
+            <td><code>403</code></td>
+            <td>Forbidden</td>
+            <td>Insufficient permissions</td>
+          </tr>
+          <tr>
+            <td><code>404</code></td>
+            <td>Not Found</td>
+            <td>Resource not found</td>
+          </tr>
+          <tr>
+            <td><code>500</code></td>
+            <td>Internal Server Error</td>
+            <td>Server error occurred</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      function toggleEndpoint(element) {
+        element.classList.toggle("active");
+      }
+
+      // Add click handlers for all endpoints
+      document.querySelectorAll(".endpoint").forEach((endpoint) => {
+        endpoint.style.cursor = "pointer";
+      });
+    </script>
+  </body>
+</html>
