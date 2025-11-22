@@ -297,7 +297,7 @@ class ProjectDepartmentController {
       const { id: projectId, departmentId } = req.params;
 
       // Verify manager has access to this department
-      const [departments] = await Department.findByManagerId(req.user.id);
+      const departments = await Department.findByManagerId(req.user.id);
       const hasDepartmentAccess = departments.some(
         (d) => d.id === parseInt(departmentId)
       );
@@ -336,7 +336,7 @@ class ProjectDepartmentController {
       const { rejection_reason } = req.body;
 
       // Verify manager has access to this department
-      const [departments] = await Department.findByManagerId(req.user.id);
+      const departments = await Department.findByManagerId(req.user.id);
       const hasDepartmentAccess = departments.some(
         (d) => d.id === parseInt(departmentId)
       );

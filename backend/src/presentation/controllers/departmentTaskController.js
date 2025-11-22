@@ -28,6 +28,18 @@ class DepartmentTaskController {
       // Check if department is assigned to project
       const departments =
         await ProjectDepartment.getProjectDepartments(projectId);
+
+      console.log("📋 [AssignTask] Validation:", {
+        projectId,
+        department_id,
+        department_id_type: typeof department_id,
+        departments: departments.map((d) => ({
+          id: d.department_id,
+          type: typeof d.department_id,
+          status: d.status,
+        })),
+      });
+
       const isDepartmentAssigned = departments.some(
         (d) => d.department_id == department_id
       );

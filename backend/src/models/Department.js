@@ -128,6 +128,23 @@ class Department {
     return rows;
   }
 
+  // Find departments by manager ID
+  static async findByManagerId(managerId) {
+    const [rows] = await db.query(
+      `SELECT 
+        d.*,
+        p.full_name as manager_name,
+        u.email as manager_email
+       FROM departments d
+       LEFT JOIN users u ON d.manager_id = u.id
+       LEFT JOIN profiles p ON u.id = p.user_id
+       WHERE d.manager_id = ?`,
+      [managerId]
+    );
+
+    return rows;
+  }
+
   // Update department
   static async update(id, data) {
     const { name, description, parent_id, manager_id } = data;

@@ -54,6 +54,20 @@ export const acceptDepartmentTask = createAsyncThunk(
   }
 );
 
+export const rejectDepartmentTask = createAsyncThunk(
+  "taskWorkflow/rejectDepartmentTask",
+  async ({ taskId, reason }, { rejectWithValue }) => {
+    try {
+      const response = await departmentTaskService.rejectTask(taskId, reason);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Không thể từ chối công việc"
+      );
+    }
+  }
+);
+
 export const updateDepartmentTaskProgress = createAsyncThunk(
   "taskWorkflow/updateDepartmentTaskProgress",
   async ({ taskId, progress, actualHours }, { rejectWithValue }) => {

@@ -1,0 +1,9 @@
+{
+  "database": "company_forum",
+  "exported_at": "2025-11-12T16:09:55.971Z",
+  "tables": 73,
+  "views": 2,
+  "triggers": 11,
+  "procedures": 2,
+  "output_file": "C:\\microsoft Visual Studio Code\\DACN-FORUM\\backend\\database\\FULL_DATABASE_SCHEMA_EXPORT.sql"
+}

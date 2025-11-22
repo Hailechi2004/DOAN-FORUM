@@ -23,6 +23,7 @@ import {
   fetchProjectDepartmentTasks,
   assignTaskToDepartment,
   acceptDepartmentTask,
+  rejectDepartmentTask,
   submitDepartmentTask,
   approveDepartmentTask,
   updateDepartmentTask,
@@ -37,6 +38,8 @@ const DepartmentTasksTab = ({ projectId, departments, currentUser }) => {
   );
 
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [actionDialog, setActionDialog] = useState({
     open: false,
@@ -90,11 +93,13 @@ const DepartmentTasksTab = ({ projectId, departments, currentUser }) => {
     const { type, task, notes } = actionDialog;
 
     try {
+      let result;
       switch (type) {
         case "accept":
-          await dispatch(
+          result = await dispatch(
             acceptDepartmentTask({ taskId: task.id, notes })
           ).unwrap();
+          console.log("✅ Accept result:", result);
           toast.success("Đã chấp nhận công việc!");
           break;
         case "reject":
@@ -102,28 +107,37 @@ const DepartmentTasksTab = ({ projectId, departments, currentUser }) => {
             toast.error("Vui lòng nhập lý do từ chối");
             return;
           }
-          // Call reject API
+          result = await dispatch(
+            rejectDepartmentTask({ taskId: task.id, reason: notes })
+          ).unwrap();
+          console.log("✅ Reject result:", result);
           toast.success("Đã từ chối công việc!");
           break;
         case "submit":
-          await dispatch(
+          result = await dispatch(
             submitDepartmentTask({ taskId: task.id, notes })
           ).unwrap();
+          console.log("✅ Submit result:", result);
           toast.success("Đã nộp công việc!");
           break;
         case "approve":
-          await dispatch(
+          result = await dispatch(
             approveDepartmentTask({ taskId: task.id, notes })
           ).unwrap();
+          console.log("✅ Approve result:", result);
           toast.success("Đã phê duyệt công việc!");
           break;
         default:
           break;
       }
       setActionDialog({ open: false, type: null, task: null, notes: "" });
-      dispatch(fetchProjectDepartmentTasks(projectId));
+      // Reload tasks to get updated status
+      await dispatch(fetchProjectDepartmentTasks(projectId));
     } catch (error) {
-      toast.error(error || "Có lỗi xảy ra");
+      console.error("❌ Action error:", error);
+      const errorMessage =
+        typeof error === "string" ? error : error.message || "Có lỗi xảy ra";
+      toast.error(errorMessage);
     }
   };
 
@@ -133,8 +147,22 @@ const DepartmentTasksTab = ({ projectId, departments, currentUser }) => {
   };
 
   const handleEditTask = (task) => {
-    // TODO: Open edit dialog with task data
-    toast.info("Chức năng chỉnh sửa đang được phát triển");
+    setEditingTask(task);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateTask = async (taskData) => {
+    try {
+      await dispatch(
+        updateDepartmentTask({ taskId: editingTask.id, taskData })
+      ).unwrap();
+      toast.success("Cập nhật công việc thành công!");
+      setEditDialogOpen(false);
+      setEditingTask(null);
+      dispatch(fetchProjectDepartmentTasks(projectId));
+    } catch (error) {
+      toast.error(error || "Không thể cập nhật công việc");
+    }
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -147,10 +175,41 @@ const DepartmentTasksTab = ({ projectId, departments, currentUser }) => {
     }
   };
 
+  // Filter tasks by status
+  let tasksToShow = departmentTasks || [];
+
+  // For Manager role: Only show tasks of accepted departments they manage
+  const isManager =
+    currentUser?.roleNames?.includes("Department Manager") ||
+    currentUser?.roleNames?.includes("Manager");
+  const isAdmin =
+    currentUser?.roleNames?.includes("System Admin") ||
+    currentUser?.roleNames?.includes("Administrator");
+
+  if (isManager && !isAdmin) {
+    // Get accepted department IDs that manager has access to
+    const acceptedDeptIds = (departments || [])
+      .filter((d) => d.status === "accepted")
+      .map((d) => d.department_id);
+
+    console.log("🔍 [DepartmentTasks] Manager filter:", {
+      isManager,
+      acceptedDeptIds,
+      allDepartments: departments,
+      allTasks: departmentTasks,
+    });
+
+    // Only show tasks for accepted departments
+    tasksToShow = tasksToShow.filter((task) =>
+      acceptedDeptIds.includes(task.department_id)
+    );
+  }
+
+  // Apply status filter
   const filteredTasks =
     statusFilter === "all"
-      ? departmentTasks || []
-      : (departmentTasks || []).filter((task) => task.status === statusFilter);
+      ? tasksToShow
+      : tasksToShow.filter((task) => task.status === statusFilter);
 
   const canAssignTask =
     currentUser?.roleNames?.includes("System Admin") ||
@@ -379,9 +438,26 @@ const DepartmentTasksTab = ({ projectId, departments, currentUser }) => {
           setSelectedTask(null);
         }}
         task={selectedTask}
-        onEdit={handleEditTask}
-        onDelete={handleDeleteTask}
+        onEdit={canAssignTask ? handleEditTask : null}
+        onDelete={canAssignTask ? handleDeleteTask : null}
       />
+
+      {/* Edit Task Dialog - Reuse Assign Dialog */}
+      {editDialogOpen && editingTask && (
+        <AssignDepartmentTaskDialog
+          open={editDialogOpen}
+          onClose={() => {
+            setEditDialogOpen(false);
+            setEditingTask(null);
+          }}
+          onAssign={handleUpdateTask}
+          departments={departments}
+          loading={loading.action}
+          error={error.action}
+          initialData={editingTask}
+          isEdit={true}
+        />
+      )}
     </Box>
   );
 };

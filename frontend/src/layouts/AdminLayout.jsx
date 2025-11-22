@@ -19,6 +19,8 @@ import {
 } from "@mui/material";
 import {
   Menu as MenuIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
   Dashboard,
   People,
   Article,
@@ -37,6 +39,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../store/slices/authSlice";
 
 const drawerWidth = 260;
+const miniDrawerWidth = 73;
 
 const adminMenuItems = [
   { text: "Trang chủ", icon: <Article />, path: "/admin/posts" },
@@ -65,6 +68,7 @@ const managerMenuItems = [
 
 const AdminLayout = ({ userType = "admin" }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null);
 
   const navigate = useNavigate();
@@ -73,6 +77,10 @@ const AdminLayout = ({ userType = "admin" }) => {
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  const handleDesktopDrawerToggle = () => {
+    setDesktopOpen(!desktopOpen);
   };
 
   const handleMenuClick = (path) => {
@@ -96,26 +104,101 @@ const AdminLayout = ({ userType = "admin" }) => {
   const menuItems = userType === "admin" ? adminMenuItems : managerMenuItems;
 
   const drawer = (
-    <Box>
+    <Box
+      sx={{
+        height: "100%",
+        background:
+          "linear-gradient(180deg, #E3F2FD 0%, #BBDEFB 50%, #90CAF9 100%)",
+      }}
+    >
       <Toolbar
         sx={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: desktopOpen ? "space-between" : "center",
           px: [1],
+          background: "linear-gradient(135deg, #1976d2 0%, #2196f3 100%)",
+          color: "white",
         }}
       >
-        <Typography variant="h6" noWrap component="div" fontWeight="bold">
-          {userType === "admin" ? "Admin Panel" : "Manager Panel"}
-        </Typography>
+        {desktopOpen && (
+          <Typography
+            variant="h5"
+            noWrap
+            component="div"
+            fontWeight="bold"
+            sx={{ fontSize: "1.5rem" }}
+          >
+            {userType === "admin" ? "Admin Panel" : "Manager Panel"}
+          </Typography>
+        )}
+        <IconButton
+          onClick={handleDesktopDrawerToggle}
+          sx={{
+            color: "white",
+            display: { xs: "none", sm: "block" },
+          }}
+        >
+          {desktopOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+        </IconButton>
       </Toolbar>
-      <Divider />
-      <List>
+      <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.3)" }} />
+      <List sx={{ px: 1 }}>
         {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton onClick={() => handleMenuClick(item.path)}>
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+          <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => handleMenuClick(item.path)}
+              sx={{
+                borderRadius: 2,
+                transition: "all 0.3s ease",
+                justifyContent: desktopOpen ? "initial" : "center",
+                px: desktopOpen ? 2 : 1.5,
+                "&:hover": {
+                  background:
+                    "linear-gradient(135deg, #FFD700 0%, #FFC107 100%)",
+                  transform: desktopOpen ? "translateX(8px)" : "scale(1.1)",
+                  boxShadow: "0 4px 12px rgba(255, 215, 0, 0.4)",
+                  "& .MuiListItemIcon-root": {
+                    color: "#000",
+                  },
+                  "& .MuiListItemText-primary": {
+                    color: "#000",
+                    fontWeight: 600,
+                  },
+                },
+                "&.Mui-selected": {
+                  background:
+                    "linear-gradient(135deg, #FFD700 0%, #FFC107 100%)",
+                  "& .MuiListItemIcon-root": {
+                    color: "#000",
+                  },
+                  "& .MuiListItemText-primary": {
+                    color: "#000",
+                    fontWeight: 600,
+                  },
+                },
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  color: "#1976d2",
+                  minWidth: desktopOpen ? 40 : "auto",
+                  mr: desktopOpen ? 2 : "auto",
+                  justifyContent: "center",
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              {desktopOpen && (
+                <ListItemText
+                  primary={item.text}
+                  primaryTypographyProps={{
+                    fontWeight: 500,
+                    color: "#0D47A1",
+                    fontSize: "1.1rem",
+                  }}
+                />
+              )}
             </ListItemButton>
           </ListItem>
         ))}
@@ -128,7 +211,11 @@ const AdminLayout = ({ userType = "admin" }) => {
       {/* Sidebar */}
       <Box
         component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        sx={{
+          width: { sm: desktopOpen ? drawerWidth : miniDrawerWidth },
+          flexShrink: { sm: 0 },
+          transition: "width 0.3s ease",
+        }}
       >
         <Drawer
           variant="temporary"
@@ -153,7 +240,9 @@ const AdminLayout = ({ userType = "admin" }) => {
             display: { xs: "none", sm: "block" },
             "& .MuiDrawer-paper": {
               boxSizing: "border-box",
-              width: drawerWidth,
+              width: desktopOpen ? drawerWidth : miniDrawerWidth,
+              transition: "width 0.3s ease",
+              overflowX: "hidden",
             },
           }}
           open
@@ -168,17 +257,27 @@ const AdminLayout = ({ userType = "admin" }) => {
           flexGrow: 1,
           display: "flex",
           flexDirection: "column",
-          width: { xs: "100%", sm: `calc(100% - ${drawerWidth}px)` },
+          width: {
+            xs: "100%",
+            sm: `calc(100% - ${desktopOpen ? drawerWidth : miniDrawerWidth}px)`,
+          },
           minHeight: "100vh",
           backgroundColor: "#f8f9fa",
+          transition: "width 0.3s ease",
         }}
       >
         {/* AppBar */}
         <AppBar
           position="fixed"
           sx={{
-            width: { xs: "100%", sm: `calc(100% - ${drawerWidth}px)` },
-            ml: { sm: `${drawerWidth}px` },
+            width: {
+              xs: "100%",
+              sm: `calc(100% - ${
+                desktopOpen ? drawerWidth : miniDrawerWidth
+              }px)`,
+            },
+            ml: { sm: `${desktopOpen ? drawerWidth : miniDrawerWidth}px` },
+            transition: "all 0.3s ease",
           }}
         >
           <Toolbar>
@@ -191,10 +290,10 @@ const AdminLayout = ({ userType = "admin" }) => {
               <MenuIcon />
             </IconButton>
             <Typography
-              variant="h6"
+              variant="h5"
               noWrap
               component="div"
-              sx={{ flexGrow: 1 }}
+              sx={{ flexGrow: 1, fontSize: "1.5rem" }}
             >
               Company Forum
             </Typography>
@@ -209,11 +308,11 @@ const AdminLayout = ({ userType = "admin" }) => {
               onClose={handleProfileMenuClose}
             >
               <MenuItem onClick={() => navigate("/admin/profile")}>
-                Profile
+                <Typography sx={{ fontSize: "1.05rem" }}>Profile</Typography>
               </MenuItem>
               <MenuItem onClick={handleLogout}>
                 <Logout fontSize="small" sx={{ mr: 1 }} />
-                Logout
+                <Typography sx={{ fontSize: "1.05rem" }}>Logout</Typography>
               </MenuItem>
             </Menu>
           </Toolbar>

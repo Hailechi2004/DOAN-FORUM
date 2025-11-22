@@ -829,7 +829,7 @@ const ManagerProjectDetail = () => {
         <TabPanel value={tabValue} index={8}>
           <DepartmentTasksTab
             projectId={id}
-            departments={allDepartments}
+            departments={departments}
             currentUser={currentUser}
           />
         </TabPanel>

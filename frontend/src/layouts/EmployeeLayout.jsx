@@ -25,6 +25,8 @@ import {
 } from "@mui/material";
 import {
   Menu as MenuIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
   Search as SearchIcon,
   Notifications as NotificationsIcon,
   Message as MessageIcon,
@@ -43,6 +45,7 @@ import {
 import { logout } from "../store/slices/authSlice";
 
 const drawerWidth = 280;
+const miniDrawerWidth = 73;
 
 const EmployeeLayout = () => {
   const theme = useTheme();
@@ -52,6 +55,7 @@ const EmployeeLayout = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(true);
   const [anchorElUser, setAnchorElUser] = useState(null);
   const [anchorElNotifications, setAnchorElNotifications] = useState(null);
 
@@ -65,6 +69,10 @@ const EmployeeLayout = () => {
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  const handleDesktopDrawerToggle = () => {
+    setDesktopOpen(!desktopOpen);
   };
 
   const handleUserMenuOpen = (event) => {
@@ -140,32 +148,45 @@ const EmployeeLayout = () => {
           p: 2.5,
           display: "flex",
           alignItems: "center",
+          justifyContent: desktopOpen ? "space-between" : "center",
           gap: 1.5,
           borderBottom: 1,
           borderColor: "divider",
         }}
       >
-        <Avatar
+        {desktopOpen && (
+          <>
+            <Avatar
+              sx={{
+                width: 40,
+                height: 40,
+                bgcolor: "primary.main",
+                fontSize: "1.25rem",
+                fontWeight: 700,
+              }}
+            >
+              CF
+            </Avatar>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                color: "text.primary",
+                fontSize: "1.5rem",
+              }}
+            >
+              Company Forum
+            </Typography>
+          </>
+        )}
+        <IconButton
+          onClick={handleDesktopDrawerToggle}
           sx={{
-            width: 40,
-            height: 40,
-            bgcolor: "primary.main",
-            fontSize: "1.25rem",
-            fontWeight: 700,
+            display: { xs: "none", md: "block" },
           }}
         >
-          CF
-        </Avatar>
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 700,
-            color: "text.primary",
-            fontSize: "1.125rem",
-          }}
-        >
-          Company Forum
-        </Typography>
+          {desktopOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+        </IconButton>
       </Box>
 
       {/* Navigation Menu */}
@@ -182,12 +203,16 @@ const EmployeeLayout = () => {
               }}
               sx={{
                 minHeight: 48,
-                px: 2.5,
+                px: desktopOpen ? 2.5 : 1.5,
+                justifyContent: desktopOpen ? "initial" : "center",
               }}
             >
               <ListItemIcon
                 sx={{
                   color: isSelected ? "primary.main" : "text.secondary",
+                  minWidth: desktopOpen ? "auto" : "auto",
+                  mr: desktopOpen ? 2 : "auto",
+                  justifyContent: "center",
                 }}
               >
                 {item.badge ? (
@@ -198,80 +223,86 @@ const EmployeeLayout = () => {
                   item.icon
                 )}
               </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                primaryTypographyProps={{
-                  fontSize: "0.9375rem",
-                  fontWeight: isSelected ? 600 : 500,
-                }}
-              />
+              {desktopOpen && (
+                <ListItemText
+                  primary={item.text}
+                  primaryTypographyProps={{
+                    fontSize: "1.1rem",
+                    fontWeight: isSelected ? 600 : 500,
+                  }}
+                />
+              )}
             </ListItemButton>
           );
         })}
       </List>
 
       {/* User Profile Section */}
-      <Box
-        sx={{
-          p: 2,
-          borderTop: 1,
-          borderColor: "divider",
-        }}
-      >
-        <Stack
-          direction="row"
-          spacing={1.5}
-          alignItems="center"
+      {desktopOpen && (
+        <Box
           sx={{
-            p: 1.5,
-            borderRadius: 2,
-            bgcolor: "background.default",
-            cursor: "pointer",
-            transition: "all 0.2s",
-            "&:hover": {
-              bgcolor: "action.hover",
-            },
+            p: 2,
+            borderTop: 1,
+            borderColor: "divider",
           }}
-          onClick={handleUserMenuOpen}
         >
-          <Avatar
-            src={user?.profile?.avatar_url}
+          <Stack
+            direction="row"
+            spacing={1.5}
+            alignItems="center"
             sx={{
-              width: 40,
-              height: 40,
-              bgcolor: "primary.main",
+              p: 1.5,
+              borderRadius: 2,
+              bgcolor: "background.default",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              "&:hover": {
+                bgcolor: "action.hover",
+              },
             }}
+            onClick={handleUserMenuOpen}
           >
-            {user?.full_name?.[0] || user?.username?.[0]}
-          </Avatar>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              variant="body2"
+            <Avatar
+              src={user?.profile?.avatar_url}
               sx={{
-                fontWeight: 600,
-                color: "text.primary",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
+                width: 40,
+                height: 40,
+                bgcolor: "primary.main",
               }}
             >
-              {user?.full_name || user?.username}
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                color: "text.secondary",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                display: "block",
-              }}
-            >
-              {user?.email}
-            </Typography>
-          </Box>
-        </Stack>
-      </Box>
+              {user?.full_name?.[0] || user?.username?.[0]}
+            </Avatar>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "1.05rem",
+                  color: "text.primary",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {user?.full_name || user?.username}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontSize: "0.95rem",
+                  color: "text.secondary",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  display: "block",
+                }}
+              >
+                {user?.email}
+              </Typography>
+            </Box>
+          </Stack>
+        </Box>
+      )}
     </Box>
   );
 
@@ -281,8 +312,9 @@ const EmployeeLayout = () => {
       <Box
         component="nav"
         sx={{
-          width: { md: drawerWidth },
+          width: { md: desktopOpen ? drawerWidth : miniDrawerWidth },
           flexShrink: { md: 0 },
+          transition: "width 0.3s ease",
         }}
       >
         {/* Mobile drawer */}
@@ -310,7 +342,9 @@ const EmployeeLayout = () => {
             display: { xs: "none", md: "block" },
             "& .MuiDrawer-paper": {
               boxSizing: "border-box",
-              width: drawerWidth,
+              width: desktopOpen ? drawerWidth : miniDrawerWidth,
+              transition: "width 0.3s ease",
+              overflowX: "hidden",
             },
           }}
           open
@@ -326,18 +360,26 @@ const EmployeeLayout = () => {
           display: "flex",
           flexDirection: "column",
           minHeight: "100vh",
-          width: { md: `calc(100% - ${drawerWidth}px)` },
+          width: {
+            md: `calc(100% - ${desktopOpen ? drawerWidth : miniDrawerWidth}px)`,
+          },
+          transition: "width 0.3s ease",
         }}
       >
         {/* AppBar */}
         <AppBar
           position="fixed"
           sx={{
-            width: { md: `calc(100% - ${drawerWidth}px)` },
-            ml: { md: `${drawerWidth}px` },
+            width: {
+              md: `calc(100% - ${
+                desktopOpen ? drawerWidth : miniDrawerWidth
+              }px)`,
+            },
+            ml: { md: `${desktopOpen ? drawerWidth : miniDrawerWidth}px` },
             bgcolor: "background.paper",
             color: "text.primary",
             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            transition: "all 0.3s ease",
           }}
         >
           <Toolbar>
@@ -370,7 +412,7 @@ const EmployeeLayout = () => {
                 placeholder="Search..."
                 sx={{
                   flex: 1,
-                  fontSize: "0.9375rem",
+                  fontSize: "1.05rem",
                   "& input::placeholder": {
                     color: "text.secondary",
                     opacity: 1,

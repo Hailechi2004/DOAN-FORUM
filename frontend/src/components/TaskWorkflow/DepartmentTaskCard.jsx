@@ -58,19 +58,49 @@ const DepartmentTaskCard = ({
     task.status !== "completed" &&
     task.status !== "approved";
 
+  // Get role codes from user
+  const userRoleCodes = currentUser?.roles?.map((r) => r.code || r) || [];
+  const userRoleNames = currentUser?.roleNames || [];
+
+  // Debug: Log currentUser structure
+  console.log("🔍 [DepartmentTaskCard] Debug:", {
+    taskId: task.id,
+    taskStatus: task.status,
+    userRoleCodes,
+    userRoleNames,
+    currentUserRoles: currentUser?.roles,
+  });
+
+  // Check if user is Admin
+  const isAdmin =
+    userRoleCodes.includes("admin") ||
+    userRoleCodes.includes("system_admin") ||
+    userRoleNames.includes("System Admin") ||
+    userRoleNames.includes("Administrator");
+
+  // Check if user is Manager
+  const isManager =
+    userRoleCodes.includes("department_manager") ||
+    userRoleCodes.includes("manager") ||
+    userRoleNames.includes("Department Manager") ||
+    userRoleNames.includes("Manager");
+
   // Check permissions based on user role
+  // ADMIN: Only approve/reject submitted tasks
+  // MANAGER: Accept assigned tasks, submit in_progress tasks
   const canAccept =
-    task.status === "assigned" &&
-    (currentUser?.roles?.includes("department_manager") ||
-      currentUser?.roles?.includes("admin"));
+    !isAdmin && // Admin KHÔNG được accept
+    isManager && // Chỉ Manager
+    task.status === "assigned";
+
   const canSubmit =
-    task.status === "in_progress" &&
-    (currentUser?.roles?.includes("department_manager") ||
-      currentUser?.roles?.includes("admin"));
+    !isAdmin && // Admin KHÔNG được submit
+    isManager && // Chỉ Manager
+    task.status === "in_progress";
+
   const canApprove =
-    task.status === "submitted" &&
-    (currentUser?.roles?.includes("admin") ||
-      currentUser?.roles?.includes("system_admin"));
+    isAdmin && // Chỉ Admin
+    task.status === "submitted";
 
   return (
     <Card

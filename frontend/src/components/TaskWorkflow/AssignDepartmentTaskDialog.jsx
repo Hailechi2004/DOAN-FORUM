@@ -30,6 +30,8 @@ const AssignDepartmentTaskDialog = ({
   departments,
   loading,
   error,
+  initialData = null,
+  isEdit = false,
 }) => {
   const [formData, setFormData] = useState({
     department_id: "",
@@ -43,7 +45,18 @@ const AssignDepartmentTaskDialog = ({
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (!open) {
+    if (open && initialData && isEdit) {
+      // Fill form with initial data for editing
+      setFormData({
+        department_id: initialData.department_id || "",
+        title: initialData.title || "",
+        description: initialData.description || "",
+        priority: initialData.priority || "medium",
+        deadline: initialData.deadline ? new Date(initialData.deadline) : null,
+        estimated_hours: initialData.estimated_hours || "",
+      });
+      setErrors({});
+    } else if (!open) {
       // Reset form when dialog closes
       setFormData({
         department_id: "",
@@ -55,7 +68,7 @@ const AssignDepartmentTaskDialog = ({
       });
       setErrors({});
     }
-  }, [open]);
+  }, [open, initialData, isEdit]);
 
   const handleChange = (field) => (event) => {
     setFormData({
@@ -98,7 +111,8 @@ const AssignDepartmentTaskDialog = ({
     }
     if (!formData.deadline) {
       newErrors.deadline = "Vui lòng chọn deadline";
-    } else if (new Date(formData.deadline) < new Date()) {
+    } else if (!isEdit && new Date(formData.deadline) < new Date()) {
+      // Only check future date when creating new task
       newErrors.deadline = "Deadline phải là ngày trong tương lai";
     }
     if (!formData.estimated_hours || formData.estimated_hours <= 0) {
@@ -128,7 +142,9 @@ const AssignDepartmentTaskDialog = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Giao Công Việc Cho Phòng Ban</DialogTitle>
+      <DialogTitle>
+        {isEdit ? "Chỉnh Sửa Công Việc" : "Giao Công Việc Cho Phòng Ban"}
+      </DialogTitle>
       <DialogContent dividers>
         <Box sx={{ pt: 2 }}>
           {error && (
@@ -148,14 +164,19 @@ const AssignDepartmentTaskDialog = ({
                 onChange={handleChange("department_id")}
                 error={!!errors.department_id}
                 helperText={errors.department_id}
-                disabled={loading}
+                disabled={loading || isEdit}
               >
                 <MenuItem value="">-- Chọn phòng ban --</MenuItem>
-                {departments?.map((dept) => (
-                  <MenuItem key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </MenuItem>
-                ))}
+                {departments?.map((dept) => {
+                  const deptId = dept.department_id || dept.id;
+                  const deptName = dept.department_name || dept.name;
+                  return (
+                    <MenuItem key={deptId} value={deptId}>
+                      {deptName}{" "}
+                      {dept.status === "pending" && "(Chưa xác nhận)"}
+                    </MenuItem>
+                  );
+                })}
               </TextField>
             </Grid>
 

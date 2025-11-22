@@ -42,7 +42,7 @@ router.delete(
 router.post(
   "/:id/assign-team",
   authenticate,
-  authorize("manager", "Department Manager"),
+  authorize("manager", "department_manager"),
   [
     body("department_id").isInt().withMessage("department_id is required"),
     body("team_id").isInt().withMessage("team_id is required"),
@@ -55,7 +55,7 @@ router.post(
 router.post(
   "/:id/assign-members",
   authenticate,
-  authorize("manager", "Department Manager"),
+  authorize("manager", "department_manager"),
   [
     body("department_id").isInt().withMessage("department_id is required"),
     body("team_id").isInt().withMessage("team_id is required"),
@@ -81,7 +81,7 @@ router.get(
 router.get(
   "/my-department/projects",
   authenticate,
-  authorize("manager", "Department Manager"),
+  authorize("manager", "department_manager"),
   projectDepartmentController.getMyDepartmentProjects
 );
 
@@ -89,7 +89,7 @@ router.get(
 router.post(
   "/:id/departments/:departmentId/accept",
   authenticate,
-  authorize("manager", "Department Manager"),
+  authorize("manager", "department_manager"),
   projectDepartmentController.acceptProjectInvitation
 );
 
@@ -97,7 +97,7 @@ router.post(
 router.post(
   "/:id/departments/:departmentId/reject",
   authenticate,
-  authorize("manager", "Department Manager"),
+  authorize("manager", "department_manager"),
   [
     body("rejection_reason")
       .optional()

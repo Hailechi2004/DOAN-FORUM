@@ -133,7 +133,7 @@ class ProjectDepartment {
   static async acceptInvitation(projectId, departmentId, confirmedBy) {
     const [result] = await db.query(
       `UPDATE project_departments 
-       SET status = 'confirmed', 
+       SET status = 'accepted', 
            confirmed_by = ?,
            confirmed_at = NOW(),
            updated_at = NOW()
@@ -158,7 +158,7 @@ class ProjectDepartment {
     const [result] = await db.query(
       `UPDATE project_departments 
        SET status = 'rejected', 
-           confirmed_by = ?,
+           rejected_by = ?,
            rejected_at = NOW(),
            rejection_reason = ?,
            updated_at = NOW()

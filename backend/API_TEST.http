@@ -1,0 +1,840 @@
+###############################################################################
+# COMPANY FORUM API - COMPLETE TEST FILE
+# Sử dụng với REST Client extension trong VS Code
+# Hoặc import vào Postman/Insomnia
+###############################################################################
+
+### Variables
+@baseUrl = http://localhost:3000/api
+@token = YOUR_ACCESS_TOKEN_HERE
+@userId = 1
+@postId = 1
+@projectId = 1
+@taskId = 1
+@eventId = 1
+@pollId = 1
+@meetingId = 1
+
+###############################################################################
+# 1. AUTHENTICATION APIs
+###############################################################################
+
+### 1.1 Register new user
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "Password123!",
+  "full_name": "Test User"
+}
+
+### 1.2 Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "Password123!"
+}
+
+### 1.3 Get Profile
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer {{token}}
+
+### 1.4 Refresh Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "YOUR_REFRESH_TOKEN"
+}
+
+### 1.5 Logout
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 2. POSTS APIs
+###############################################################################
+
+### 2.1 Get all posts (with filters)
+GET {{baseUrl}}/posts?page=1&limit=10&category_id=1&is_pinned=false
+Authorization: Bearer {{token}}
+
+### 2.2 Get post by ID
+GET {{baseUrl}}/posts/{{postId}}
+Authorization: Bearer {{token}}
+
+### 2.3 Create new post
+POST {{baseUrl}}/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Test Post Title",
+  "content": "This is test post content with detailed information",
+  "category_id": 1,
+  "tags": ["test", "api"]
+}
+
+### 2.4 Update post
+PUT {{baseUrl}}/posts/{{postId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Updated Post Title",
+  "content": "Updated content"
+}
+
+### 2.5 Delete post
+DELETE {{baseUrl}}/posts/{{postId}}
+Authorization: Bearer {{token}}
+
+### 2.6 React to post
+POST {{baseUrl}}/posts/{{postId}}/react
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reaction_type": "like"
+}
+
+### 2.7 Pin/Unpin post (admin/manager)
+PUT {{baseUrl}}/posts/{{postId}}/pin
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_pinned": true
+}
+
+###############################################################################
+# 3. COMMENTS APIs
+###############################################################################
+
+### 3.1 Get all comments for a post
+GET {{baseUrl}}/comments?post_id={{postId}}
+Authorization: Bearer {{token}}
+
+### 3.2 Create comment
+POST {{baseUrl}}/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "post_id": 1,
+  "content": "This is a test comment",
+  "parent_id": null
+}
+
+### 3.3 Create nested reply
+POST {{baseUrl}}/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "post_id": 1,
+  "content": "This is a reply to comment",
+  "parent_id": 1
+}
+
+### 3.4 Update comment
+PUT {{baseUrl}}/comments/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "content": "Updated comment content"
+}
+
+### 3.5 Delete comment
+DELETE {{baseUrl}}/comments/1
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 4. MESSAGES APIs
+###############################################################################
+
+### 4.1 Get all conversations
+GET {{baseUrl}}/messages/conversations
+Authorization: Bearer {{token}}
+
+### 4.2 Get conversation messages
+GET {{baseUrl}}/messages/conversations/1
+Authorization: Bearer {{token}}
+
+### 4.3 Send message
+POST {{baseUrl}}/messages
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "receiver_id": 2,
+  "content": "Hello, this is a test message"
+}
+
+### 4.4 Mark message as read
+PUT {{baseUrl}}/messages/1/read
+Authorization: Bearer {{token}}
+
+### 4.5 Delete message
+DELETE {{baseUrl}}/messages/1
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 5. NOTIFICATIONS APIs
+###############################################################################
+
+### 5.1 Get all notifications
+GET {{baseUrl}}/notifications?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 5.2 Get unread notifications count
+GET {{baseUrl}}/notifications/unread
+Authorization: Bearer {{token}}
+
+### 5.3 Mark notification as read
+PUT {{baseUrl}}/notifications/1/read
+Authorization: Bearer {{token}}
+
+### 5.4 Delete notification
+DELETE {{baseUrl}}/notifications/1
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 6. DEPARTMENTS APIs
+###############################################################################
+
+### 6.1 Get all departments (tree structure)
+GET {{baseUrl}}/departments?tree=true
+Authorization: Bearer {{token}}
+
+### 6.2 Get department by ID
+GET {{baseUrl}}/departments/1
+Authorization: Bearer {{token}}
+
+### 6.3 Get department members
+GET {{baseUrl}}/departments/1/members
+Authorization: Bearer {{token}}
+
+### 6.4 Get department statistics
+GET {{baseUrl}}/departments/1/stats
+Authorization: Bearer {{token}}
+
+### 6.5 Create department (admin/manager)
+POST {{baseUrl}}/departments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "IT Department",
+  "description": "Information Technology Department",
+  "parent_id": null
+}
+
+### 6.6 Update department
+PUT {{baseUrl}}/departments/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Updated IT Department",
+  "description": "Updated description"
+}
+
+### 6.7 Delete department
+DELETE {{baseUrl}}/departments/1
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 7. TEAMS APIs
+###############################################################################
+
+### 7.1 Get all teams
+GET {{baseUrl}}/teams?department_id=1&page=1&limit=10
+Authorization: Bearer {{token}}
+
+### 7.2 Get team by ID
+GET {{baseUrl}}/teams/1
+Authorization: Bearer {{token}}
+
+### 7.3 Get team members
+GET {{baseUrl}}/teams/1/members
+Authorization: Bearer {{token}}
+
+### 7.4 Get team statistics
+GET {{baseUrl}}/teams/1/stats
+Authorization: Bearer {{token}}
+
+### 7.5 Create team
+POST {{baseUrl}}/teams
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Development Team",
+  "description": "Backend development team",
+  "department_id": 1
+}
+
+### 7.6 Update team
+PUT {{baseUrl}}/teams/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Updated Dev Team"
+}
+
+### 7.7 Add team member
+POST {{baseUrl}}/teams/1/members
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "user_id": 2,
+  "role": "member"
+}
+
+### 7.8 Update member role
+PATCH {{baseUrl}}/teams/1/members/2/role
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "role": "lead"
+}
+
+### 7.9 Remove team member
+DELETE {{baseUrl}}/teams/1/members/2
+Authorization: Bearer {{token}}
+
+### 7.10 Delete team
+DELETE {{baseUrl}}/teams/1
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 8. CATEGORIES APIs
+###############################################################################
+
+### 8.1 Get all categories
+GET {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+
+### 8.2 Get category by ID
+GET {{baseUrl}}/categories/1
+Authorization: Bearer {{token}}
+
+### 8.3 Create category (admin/manager)
+POST {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Technology",
+  "description": "Tech related posts",
+  "parent_id": null
+}
+
+### 8.4 Update category
+PUT {{baseUrl}}/categories/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Updated Technology"
+}
+
+### 8.5 Delete category
+DELETE {{baseUrl}}/categories/1
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 9. FILES APIs
+###############################################################################
+
+### 9.1 Get all files
+GET {{baseUrl}}/files?page=1&limit=20&file_type=image
+Authorization: Bearer {{token}}
+
+### 9.2 Get file by ID
+GET {{baseUrl}}/files/1
+Authorization: Bearer {{token}}
+
+### 9.3 Upload file (multipart/form-data)
+POST {{baseUrl}}/files/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="related_type"
+
+post
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="related_id"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 9.4 Download file
+GET {{baseUrl}}/files/1/download
+Authorization: Bearer {{token}}
+
+### 9.5 Delete file
+DELETE {{baseUrl}}/files/1
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 10. USERS APIs (Admin only)
+###############################################################################
+
+### 10.1 Get all users (with filters)
+GET {{baseUrl}}/users?page=1&limit=20&department_id=1&role=user&active=true
+Authorization: Bearer {{token}}
+
+### 10.2 Get user by ID
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{token}}
+
+### 10.3 Update user (admin)
+PUT {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "full_name": "Updated Name",
+  "email": "updated@example.com",
+  "department_id": 1
+}
+
+### 10.4 Assign role to user
+POST {{baseUrl}}/users/{{userId}}/roles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "role_id": 2
+}
+
+### 10.5 Remove role from user
+DELETE {{baseUrl}}/users/{{userId}}/roles/2
+Authorization: Bearer {{token}}
+
+### 10.6 Delete user (admin)
+DELETE {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 11. PROJECTS APIs
+###############################################################################
+
+### 11.1 Get all projects
+GET {{baseUrl}}/projects?page=1&limit=10&status=in_progress&department_id=1
+Authorization: Bearer {{token}}
+
+### 11.2 Get project by ID
+GET {{baseUrl}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+
+### 11.3 Get project members
+GET {{baseUrl}}/projects/{{projectId}}/members
+Authorization: Bearer {{token}}
+
+### 11.4 Create project (admin/manager)
+POST {{baseUrl}}/projects
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Website Redesign",
+  "description": "Complete website redesign project",
+  "department_id": 1,
+  "team_id": 1,
+  "manager_id": 2,
+  "start_date": "2025-11-01",
+  "end_date": "2025-12-31",
+  "status": "planning"
+}
+
+### 11.5 Update project
+PUT {{baseUrl}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "in_progress",
+  "progress": 25
+}
+
+### 11.6 Add project member
+POST {{baseUrl}}/projects/{{projectId}}/members
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "user_id": 3,
+  "role": "member"
+}
+
+### 11.7 Remove project member
+DELETE {{baseUrl}}/projects/{{projectId}}/members/3
+Authorization: Bearer {{token}}
+
+### 11.8 Delete project (admin)
+DELETE {{baseUrl}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 12. TASKS APIs
+###############################################################################
+
+### 12.1 Get all tasks (with filters)
+GET {{baseUrl}}/tasks?project_id=1&status=pending&priority=high&page=1&limit=10
+Authorization: Bearer {{token}}
+
+### 12.2 Get task by ID
+GET {{baseUrl}}/tasks/{{taskId}}
+Authorization: Bearer {{token}}
+
+### 12.3 Create task
+POST {{baseUrl}}/tasks
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Implement user authentication",
+  "description": "Create login and registration endpoints",
+  "project_id": 1,
+  "assigned_to": 2,
+  "priority": "high",
+  "status": "pending",
+  "due_date": "2025-11-15T17:00:00Z"
+}
+
+### 12.4 Update task
+PUT {{baseUrl}}/tasks/{{taskId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "in_progress",
+  "priority": "urgent"
+}
+
+### 12.5 Get task comments
+GET {{baseUrl}}/tasks/{{taskId}}/comments
+Authorization: Bearer {{token}}
+
+### 12.6 Add task comment
+POST {{baseUrl}}/tasks/{{taskId}}/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "content": "Started working on this task"
+}
+
+### 12.7 Delete task
+DELETE {{baseUrl}}/tasks/{{taskId}}
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 13. EVENTS APIs
+###############################################################################
+
+### 13.1 Get all events (calendar)
+GET {{baseUrl}}/events?start_date=2025-11-01&end_date=2025-11-30&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 13.2 Get event by ID
+GET {{baseUrl}}/events/{{eventId}}
+Authorization: Bearer {{token}}
+
+### 13.3 Get event attendees
+GET {{baseUrl}}/events/{{eventId}}/attendees
+Authorization: Bearer {{token}}
+
+### 13.4 Create event
+POST {{baseUrl}}/events
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Team Meeting",
+  "description": "Weekly team sync meeting",
+  "location": "Conference Room A",
+  "start_time": "2025-11-05T10:00:00Z",
+  "end_time": "2025-11-05T11:00:00Z",
+  "is_all_day": false,
+  "reminder_minutes": 15
+}
+
+### 13.5 Update event
+PUT {{baseUrl}}/events/{{eventId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Updated Team Meeting",
+  "location": "Conference Room B"
+}
+
+### 13.6 Add event attendee
+POST {{baseUrl}}/events/{{eventId}}/attendees
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "user_id": 3,
+  "status": "pending"
+}
+
+### 13.7 Remove event attendee
+DELETE {{baseUrl}}/events/{{eventId}}/attendees/3
+Authorization: Bearer {{token}}
+
+### 13.8 Delete event
+DELETE {{baseUrl}}/events/{{eventId}}
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 14. POLLS APIs
+###############################################################################
+
+### 14.1 Get all polls
+GET {{baseUrl}}/polls?active_only=true&page=1&limit=10
+Authorization: Bearer {{token}}
+
+### 14.2 Get poll by ID
+GET {{baseUrl}}/polls/{{pollId}}
+Authorization: Bearer {{token}}
+
+### 14.3 Get poll results
+GET {{baseUrl}}/polls/{{pollId}}/results
+Authorization: Bearer {{token}}
+
+### 14.4 Create poll
+POST {{baseUrl}}/polls
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "question": "What is your preferred programming language?",
+  "options": [
+    "JavaScript",
+    "Python",
+    "Java",
+    "C#"
+  ],
+  "expires_at": "2025-11-30T23:59:59Z",
+  "allow_multiple": false,
+  "is_anonymous": true
+}
+
+### 14.5 Vote on poll
+POST {{baseUrl}}/polls/{{pollId}}/vote
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "option_ids": [1]
+}
+
+### 14.6 Delete poll
+DELETE {{baseUrl}}/polls/{{pollId}}
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 15. BOOKMARKS APIs
+###############################################################################
+
+### 15.1 Get user bookmarks
+GET {{baseUrl}}/bookmarks?resource_type=post&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 15.2 Get bookmark by ID
+GET {{baseUrl}}/bookmarks/1
+Authorization: Bearer {{token}}
+
+### 15.3 Create bookmark
+POST {{baseUrl}}/bookmarks
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "resource_type": "post",
+  "resource_id": 1,
+  "notes": "Important post to review later"
+}
+
+### 15.4 Update bookmark notes
+PUT {{baseUrl}}/bookmarks/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "notes": "Updated notes for this bookmark"
+}
+
+### 15.5 Delete bookmark
+DELETE {{baseUrl}}/bookmarks/1
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 16. MEETINGS APIs
+###############################################################################
+
+### 16.1 Get all meetings
+GET {{baseUrl}}/meetings?start_date=2025-11-01&end_date=2025-11-30&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 16.2 Get meeting by ID
+GET {{baseUrl}}/meetings/{{meetingId}}
+Authorization: Bearer {{token}}
+
+### 16.3 Get meeting participants
+GET {{baseUrl}}/meetings/{{meetingId}}/participants
+Authorization: Bearer {{token}}
+
+### 16.4 Create meeting
+POST {{baseUrl}}/meetings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Project Kickoff Meeting",
+  "description": "Initial project planning meeting",
+  "scheduled_time": "2025-11-10T14:00:00Z",
+  "duration_minutes": 60,
+  "location": "Main Conference Room",
+  "meeting_link": "https://meet.example.com/abc123"
+}
+
+### 16.5 Update meeting
+PUT {{baseUrl}}/meetings/{{meetingId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Updated Project Meeting",
+  "duration_minutes": 90
+}
+
+### 16.6 Add meeting participant
+POST {{baseUrl}}/meetings/{{meetingId}}/participants
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "user_id": 3,
+  "status": "invited"
+}
+
+### 16.7 Remove meeting participant
+DELETE {{baseUrl}}/meetings/{{meetingId}}/participants/3
+Authorization: Bearer {{token}}
+
+### 16.8 Delete meeting
+DELETE {{baseUrl}}/meetings/{{meetingId}}
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 17. SEARCH API (Global Search)
+###############################################################################
+
+### 17.1 Global search - All types
+GET {{baseUrl}}/search?q=test&limit=10
+Authorization: Bearer {{token}}
+
+### 17.2 Search posts only
+GET {{baseUrl}}/search?q=project&type=posts&limit=5
+Authorization: Bearer {{token}}
+
+### 17.3 Search users
+GET {{baseUrl}}/search?q=john&type=users&limit=5
+Authorization: Bearer {{token}}
+
+### 17.4 Search projects
+GET {{baseUrl}}/search?q=website&type=projects&limit=5
+Authorization: Bearer {{token}}
+
+### 17.5 Search tasks
+GET {{baseUrl}}/search?q=implement&type=tasks&limit=5
+Authorization: Bearer {{token}}
+
+### 17.6 Search files
+GET {{baseUrl}}/search?q=document&type=files&limit=5
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 18. ANALYTICS APIs
+###############################################################################
+
+### 18.1 Get dashboard statistics
+GET {{baseUrl}}/analytics/dashboard
+Authorization: Bearer {{token}}
+
+### 18.2 Get activity trend (last 30 days)
+GET {{baseUrl}}/analytics/activity-trend?days=30
+Authorization: Bearer {{token}}
+
+### 18.3 Get activity trend (last 7 days)
+GET {{baseUrl}}/analytics/activity-trend?days=7
+Authorization: Bearer {{token}}
+
+### 18.4 Get top users
+GET {{baseUrl}}/analytics/top-users?limit=10
+Authorization: Bearer {{token}}
+
+### 18.5 Get project statistics (admin/manager)
+GET {{baseUrl}}/analytics/projects
+Authorization: Bearer {{token}}
+
+### 18.6 Get task statistics (admin/manager)
+GET {{baseUrl}}/analytics/tasks
+Authorization: Bearer {{token}}
+
+###############################################################################
+# 19. HEALTH CHECK
+###############################################################################
+
+### 19.1 API Health Check
+GET {{baseUrl}}/health
+
+###############################################################################
+# TEST SCENARIOS - Sequential Testing
+###############################################################################
+
+### SCENARIO 1: Complete User Flow
+# 1. Register → 2. Login → 3. Get Profile → 4. Create Post → 5. Comment on Post
+
+### SCENARIO 2: Project Management Flow
+# 1. Create Department → 2. Create Team → 3. Create Project → 4. Create Task → 5. Add Members
+
+### SCENARIO 3: Social Features Flow
+# 1. Create Post → 2. Add Comment → 3. React to Post → 4. Bookmark Post → 5. Search Posts
+
+### SCENARIO 4: Event Management Flow
+# 1. Create Event → 2. Add Attendees → 3. Create Meeting → 4. Add Participants
+
+### SCENARIO 5: Analytics Dashboard
+# 1. Get Dashboard Stats → 2. Get Activity Trend → 3. Get Top Users → 4. Get Project/Task Stats
+
+###############################################################################
+# NOTES:
+# 1. Replace {{token}} with actual JWT token from login response
+# 2. Replace IDs ({{postId}}, {{projectId}}, etc.) with actual IDs from responses
+# 3. Install "REST Client" extension in VS Code to run these tests
+# 4. Or import into Postman/Insomnia
+# 5. Make sure backend server is running at http://localhost:3000
+# 6. All endpoints require authentication except Register, Login, and Health Check
+###############################################################################
