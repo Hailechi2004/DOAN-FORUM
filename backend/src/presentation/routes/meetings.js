@@ -485,4 +485,231 @@ router.delete(
   meetingController.removeParticipant
 );
 
+// ============ JITSI VIDEO MEETING ROUTES ============
+
+/**
+ * @swagger
+ * /api/meetings/{id}/start:
+ *   post:
+ *     tags: [Meetings]
+ *     summary: Start a Jitsi video meeting
+ *     description: Generates a Jitsi room and updates the meeting link. Only organizer or department manager can start.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Meeting ID
+ *     responses:
+ *       200:
+ *         description: Meeting started successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     meeting:
+ *                       type: object
+ *                     roomName:
+ *                       type: string
+ *                     jitsiUrl:
+ *                       type: string
+ *                     jitsiDomain:
+ *                       type: string
+ *       403:
+ *         description: Not authorized to start this meeting
+ *       404:
+ *         description: Meeting not found
+ */
+router.post("/:id/start", authenticate, meetingController.startMeeting);
+
+/**
+ * @swagger
+ * /api/meetings/{id}/join:
+ *   post:
+ *     tags: [Meetings]
+ *     summary: Join a Jitsi video meeting
+ *     description: Validates user access and returns meeting details to join
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Meeting ID
+ *     responses:
+ *       200:
+ *         description: Access granted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     meeting:
+ *                       type: object
+ *                     roomName:
+ *                       type: string
+ *                     jitsiUrl:
+ *                       type: string
+ *                     userInfo:
+ *                       type: object
+ *       400:
+ *         description: Meeting not started yet
+ *       403:
+ *         description: Not invited to this meeting
+ *       404:
+ *         description: Meeting not found
+ */
+router.post("/:id/join", authenticate, meetingController.joinMeeting);
+
+/**
+ * @swagger
+ * /api/meetings/{id}/end:
+ *   post:
+ *     tags: [Meetings]
+ *     summary: End a Jitsi video meeting
+ *     description: Ends the meeting and updates session records. Only organizer or department manager can end.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Meeting ID
+ *     responses:
+ *       200:
+ *         description: Meeting ended successfully
+ *       403:
+ *         description: Not authorized to end this meeting
+ *       404:
+ *         description: Meeting not found
+ */
+router.post("/:id/end", authenticate, meetingController.endMeeting);
+
+/**
+ * @swagger
+ * /api/meetings/{id}/active-participants:
+ *   get:
+ *     tags: [Meetings]
+ *     summary: Get active participants in a meeting
+ *     description: Returns list of users currently in the meeting
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Meeting ID
+ *     responses:
+ *       200:
+ *         description: Active participants retrieved successfully
+ */
+router.get(
+  "/:id/active-participants",
+  authenticate,
+  meetingController.getActiveParticipants
+);
+
+/**
+ * @swagger
+ * /api/meetings/jitsi/config:
+ *   get:
+ *     tags: [Meetings]
+ *     summary: Get Jitsi configuration
+ *     description: Returns Jitsi server configuration for frontend
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Jitsi configuration retrieved successfully
+ */
+router.get("/jitsi/config", authenticate, meetingController.getJitsiConfig);
+
+/**
+ * @swagger
+ * /api/meetings/{id}/sessions:
+ *   get:
+ *     tags: [Meetings]
+ *     summary: Get meeting session history
+ *     description: Returns all sessions for a meeting
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Session history retrieved successfully
+ */
+router.get("/:id/sessions", authenticate, meetingController.getMeetingSessions);
+
+/**
+ * @swagger
+ * /api/meetings/{id}/stats:
+ *   get:
+ *     tags: [Meetings]
+ *     summary: Get meeting statistics
+ *     description: Returns statistics for a meeting (total sessions, participants, etc)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Statistics retrieved successfully
+ */
+router.get("/:id/stats", authenticate, meetingController.getMeetingStats);
+
+/**
+ * @swagger
+ * /api/meetings/{id}/events:
+ *   get:
+ *     tags: [Meetings]
+ *     summary: Get meeting events log
+ *     description: Returns event log for a meeting (screen share, recording, etc)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *     responses:
+ *       200:
+ *         description: Events retrieved successfully
+ */
+router.get("/:id/events", authenticate, meetingController.getMeetingEvents);
+
 module.exports = router;

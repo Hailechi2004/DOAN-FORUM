@@ -1,6 +1,7 @@
 const { ApiResponse } = require("../../utils/apiHelpers");
 const container = require("../../container");
 const Meeting = require("../../models/Meeting");
+const jitsiService = require("../../services/jitsiService");
 
 class MeetingController {
   constructor() {
@@ -23,6 +24,16 @@ class MeetingController {
     this.getParticipants = this.getParticipants.bind(this);
     this.addParticipant = this.addParticipant.bind(this);
     this.removeParticipant = this.removeParticipant.bind(this);
+
+    // Jitsi meeting methods
+    this.startMeeting = this.startMeeting.bind(this);
+    this.joinMeeting = this.joinMeeting.bind(this);
+    this.endMeeting = this.endMeeting.bind(this);
+    this.getActiveParticipants = this.getActiveParticipants.bind(this);
+    this.getJitsiConfig = this.getJitsiConfig.bind(this);
+    this.getMeetingSessions = this.getMeetingSessions.bind(this);
+    this.getMeetingStats = this.getMeetingStats.bind(this);
+    this.getMeetingEvents = this.getMeetingEvents.bind(this);
   }
 
   async create(req, res, next) {
@@ -183,6 +194,294 @@ class MeetingController {
     try {
       await Meeting.removeParticipant(req.params.id, req.params.userId);
       ApiResponse.success(res, null, "Participant removed successfully");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ============ JITSI MEETING METHODS ============
+
+  /**
+   * Start a Jitsi video meeting
+   * Generates Jitsi room and updates meeting_link
+   */
+  async startMeeting(req, res, next) {
+    try {
+      const meetingId = req.params.id;
+      const userId = req.user.id;
+
+      // Get meeting details with attendees
+      const meeting = await Meeting.findById(meetingId);
+      if (!meeting) {
+        return ApiResponse.error(res, "Meeting not found", 404);
+      }
+
+      // Get attendees to check permissions
+      const attendees = await Meeting.getAttendees(meetingId);
+
+      // Check permissions - Allow:
+      // 1. Organizer
+      // 2. Admin (any role)
+      // 3. Manager (same department)
+      // 4. Accepted attendee
+      const isOrganizer = meeting.organizer_id === userId;
+      const isAdmin = req.user.role === "admin" || req.user.role === "System Admin";
+      const isManager =
+        (req.user.role === "manager" || req.user.role === "Department Manager") &&
+        req.user.department_id === meeting.department_id;
+      const isAcceptedAttendee = attendees.some(
+        (a) => a.user_id === userId && a.status === "accepted"
+      );
+
+      if (!isOrganizer && !isAdmin && !isManager && !isAcceptedAttendee) {
+        return ApiResponse.error(
+          res,
+          "You don't have permission to start this meeting. Only organizer, managers, or accepted attendees can start.",
+          403
+        );
+      }
+
+      // Check if meeting is cancelled
+      if (meeting.is_cancelled) {
+        return ApiResponse.error(res, "Cannot start a cancelled meeting", 400);
+      }
+
+      // Generate Jitsi room
+      const roomName = jitsiService.generateRoomName(meetingId);
+      const jitsiLink = jitsiService.createMeetingLink(meetingId, roomName);
+
+      // Update meeting with Jitsi link
+      const { meeting: updatedMeeting, sessionId } = await Meeting.startMeeting(
+        meetingId,
+        jitsiLink,
+        roomName,
+        userId
+      );
+
+      // Broadcast meeting started event via Socket.io
+      const app = require("../../app");
+      const socketHandler = app.getSocketHandler();
+      if (socketHandler) {
+        socketHandler.broadcastMeetingStarted(
+          meetingId,
+          updatedMeeting,
+          userId
+        );
+
+        // Notify all attendees
+        if (meeting.attendees && meeting.attendees.length > 0) {
+          const attendeeIds = meeting.attendees.map((a) => a.user_id);
+          socketHandler.notifyMeetingAttendees(attendeeIds, {
+            type: "meeting_started",
+            meeting_id: meetingId,
+            meeting_title: meeting.title,
+            started_by: userId,
+            jitsi_url: jitsiLink,
+          });
+        }
+      }
+
+      ApiResponse.success(
+        res,
+        {
+          meeting: updatedMeeting,
+          roomName,
+          jitsiUrl: jitsiLink,
+          jitsiDomain: jitsiService.jitsiDomain,
+        },
+        "Meeting started successfully"
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Join a Jitsi meeting
+   * Validates access and returns meeting details
+   */
+  async joinMeeting(req, res, next) {
+    try {
+      const meetingId = req.params.id;
+      const userId = req.user.id;
+
+      // Get meeting with attendees
+      const meeting = await Meeting.findById(meetingId);
+      if (!meeting) {
+        return ApiResponse.error(res, "Meeting not found", 404);
+      }
+
+      // Validate access
+      const accessValidation = jitsiService.validateRoomAccess(userId, meeting);
+      if (!accessValidation.allowed) {
+        return ApiResponse.error(res, accessValidation.reason, 403);
+      }
+
+      // Check if meeting has been started (has meeting_link)
+      if (!meeting.meeting_link) {
+        return ApiResponse.error(res, "Meeting has not been started yet", 400);
+      }
+
+      // Track user joining
+      await Meeting.trackJoin(meetingId, userId);
+
+      // Broadcast user joined event via Socket.io
+      const app = require("../../app");
+      const socketHandler = app.getSocketHandler();
+      if (socketHandler) {
+        socketHandler.broadcastToMeeting(meetingId, "meeting:user-joined", {
+          user_id: userId,
+          user_info: {
+            id: userId,
+            username: req.user.username,
+            full_name: req.user.full_name,
+            email: req.user.email,
+            avatar_url: req.user.avatar_url,
+          },
+        });
+      }
+
+      // Extract room name from meeting link
+      const roomName = jitsiService.extractRoomName(meeting.meeting_link);
+
+      ApiResponse.success(
+        res,
+        {
+          meeting,
+          roomName,
+          jitsiUrl: meeting.meeting_link,
+          jitsiDomain: jitsiService.jitsiDomain,
+          userInfo: {
+            id: req.user.id,
+            displayName: req.user.full_name || req.user.username,
+            email: req.user.email,
+          },
+        },
+        "Access granted"
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * End a Jitsi meeting
+   */
+  async endMeeting(req, res, next) {
+    try {
+      const meetingId = req.params.id;
+      const userId = req.user.id;
+
+      // Get meeting details
+      const meeting = await Meeting.findById(meetingId);
+      if (!meeting) {
+        return ApiResponse.error(res, "Meeting not found", 404);
+      }
+
+      // Check if user is organizer or has permission
+      if (meeting.organizer_id !== userId) {
+        const isAdmin = req.user.roles?.includes("System Admin");
+        const isManager =
+          req.user.roles?.includes("Department Manager") &&
+          req.user.department_id === meeting.department_id;
+
+        if (!isAdmin && !isManager) {
+          return ApiResponse.error(
+            res,
+            "Only the organizer or department manager can end the meeting",
+            403
+          );
+        }
+      }
+
+      // End meeting
+      const updatedMeeting = await Meeting.endMeeting(meetingId, userId);
+
+      // Broadcast meeting ended event via Socket.io
+      const app = require("../../app");
+      const socketHandler = app.getSocketHandler();
+      if (socketHandler) {
+        socketHandler.broadcastMeetingEnded(meetingId, userId);
+
+        // Notify all attendees that meeting has ended
+        if (meeting.attendees && meeting.attendees.length > 0) {
+          const attendeeIds = meeting.attendees.map((a) => a.user_id);
+          socketHandler.notifyMeetingAttendees(attendeeIds, {
+            type: "meeting_ended",
+            meeting_id: meetingId,
+            meeting_title: meeting.title,
+            ended_by: userId,
+          });
+        }
+      }
+
+      ApiResponse.success(res, updatedMeeting, "Meeting ended successfully");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get active participants in a meeting
+   */
+  async getActiveParticipants(req, res, next) {
+    try {
+      const meetingId = req.params.id;
+      const participants = await Meeting.getActiveParticipants(meetingId);
+
+      ApiResponse.success(res, participants);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get Jitsi configuration for frontend
+   */
+  async getJitsiConfig(req, res, next) {
+    try {
+      const config = jitsiService.getJitsiConfig();
+      ApiResponse.success(res, config);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get meeting session history
+   */
+  async getMeetingSessions(req, res, next) {
+    try {
+      const meetingId = req.params.id;
+      const sessions = await Meeting.getMeetingSessions(meetingId);
+      ApiResponse.success(res, sessions);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get meeting statistics
+   */
+  async getMeetingStats(req, res, next) {
+    try {
+      const meetingId = req.params.id;
+      const stats = await Meeting.getMeetingStats(meetingId);
+      ApiResponse.success(res, stats);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get meeting events log
+   */
+  async getMeetingEvents(req, res, next) {
+    try {
+      const meetingId = req.params.id;
+      const limit = parseInt(req.query.limit) || 50;
+      const events = await Meeting.getMeetingEvents(meetingId, limit);
+      ApiResponse.success(res, events);
     } catch (error) {
       next(error);
     }

@@ -473,6 +473,276 @@ class Meeting {
     );
     return true;
   }
+
+  // ============ JITSI MEETING METHODS ============
+
+  /**
+   * Start a Jitsi meeting - updates meeting_link with generated Jitsi URL
+   * @param {number} id - Meeting ID
+   * @param {string} jitsiLink - Generated Jitsi meeting link
+   * @param {string} roomName - Jitsi room name
+   * @returns {Object} Updated meeting
+   */
+  static async startMeeting(id, jitsiLink, roomName, startedBy) {
+    await db.query(
+      `UPDATE meetings 
+       SET meeting_link = ?, 
+           updated_at = NOW() 
+       WHERE id = ?`,
+      [jitsiLink, id]
+    );
+
+    // Create meeting_sessions record
+    const [result] = await db.query(
+      `INSERT INTO meeting_sessions 
+       (meeting_id, jitsi_room_id, started_at, started_by)
+       VALUES (?, ?, NOW(), ?)`,
+      [id, roomName, startedBy]
+    );
+
+    const sessionId = result.insertId;
+    return { meeting: await this.findById(id), sessionId };
+  }
+
+  /**
+   * End a Jitsi meeting - marks meeting as ended
+   * @param {number} id - Meeting ID
+   * @returns {Object} Updated meeting
+   */
+  static async endMeeting(id, endedBy) {
+    // Update meeting_sessions table
+    await db.query(
+      `UPDATE meeting_sessions 
+       SET ended_at = NOW(), 
+           ended_by = ?,
+           duration_seconds = TIMESTAMPDIFF(SECOND, started_at, NOW())
+       WHERE meeting_id = ? AND ended_at IS NULL`,
+      [endedBy, id]
+    );
+
+    // Mark all active participants as left
+    await db.query(
+      `UPDATE meeting_active_participants 
+       SET left_at = NOW(),
+           is_active = FALSE,
+           duration_seconds = TIMESTAMPDIFF(SECOND, joined_at, NOW())
+       WHERE meeting_id = ? AND is_active = TRUE AND left_at IS NULL`,
+      [id]
+    );
+
+    return this.findById(id);
+  }
+
+  /**
+   * Track user joining a meeting
+   * @param {number} meetingId - Meeting ID
+   * @param {number} userId - User ID
+   * @returns {boolean} Success
+   */
+  static async trackJoin(meetingId, userId) {
+    // Check if user is already an attendee/participant
+    const [existing] = await db.query(
+      `SELECT * FROM meeting_attendees WHERE meeting_id = ? AND user_id = ?`,
+      [meetingId, userId]
+    );
+
+    if (existing.length === 0) {
+      // Add as participant if not already in attendees
+      await db.query(
+        `INSERT IGNORE INTO meeting_participants (meeting_id, user_id, status, joined_at)
+         VALUES (?, ?, 'accepted', NOW())`,
+        [meetingId, userId]
+      );
+    }
+
+    // Get active session ID
+    const [sessions] = await db.query(
+      `SELECT id FROM meeting_sessions 
+       WHERE meeting_id = ? AND ended_at IS NULL 
+       ORDER BY started_at DESC LIMIT 1`,
+      [meetingId]
+    );
+
+    const sessionId = sessions.length > 0 ? sessions[0].id : null;
+
+    // Track in meeting_active_participants
+    await db.query(
+      `INSERT INTO meeting_active_participants 
+       (meeting_id, user_id, session_id, joined_at, is_active)
+       VALUES (?, ?, ?, NOW(), TRUE)`,
+      [meetingId, userId, sessionId]
+    );
+
+    return true;
+  }
+
+  /**
+   * Track user leaving a meeting
+   * @param {number} meetingId - Meeting ID
+   * @param {number} userId - User ID
+   * @returns {boolean} Success
+   */
+  static async trackLeave(meetingId, userId) {
+    // Update meeting_active_participants
+    await db.query(
+      `UPDATE meeting_active_participants 
+       SET left_at = NOW(),
+           is_active = FALSE,
+           duration_seconds = TIMESTAMPDIFF(SECOND, joined_at, NOW())
+       WHERE meeting_id = ? AND user_id = ? AND is_active = TRUE AND left_at IS NULL`,
+      [meetingId, userId]
+    );
+
+    return true;
+  }
+
+  /**
+   * Get active participants in a meeting
+   * @param {number} meetingId - Meeting ID
+   * @returns {Array} List of active participants
+   */
+  static async getActiveParticipants(meetingId) {
+    // Query meeting_active_participants for real-time data
+    const [participants] = await db.query(
+      `SELECT 
+        map.id,
+        map.user_id,
+        map.joined_at,
+        map.left_at,
+        map.is_active,
+        map.duration_seconds,
+        map.device_type,
+        map.connection_quality,
+        TIMESTAMPDIFF(SECOND, map.joined_at, NOW()) as seconds_in_meeting,
+        u.username,
+        u.full_name,
+        u.email,
+        u.avatar_url
+       FROM meeting_active_participants map
+       JOIN users u ON map.user_id = u.id
+       WHERE map.meeting_id = ?
+         AND map.is_active = TRUE
+         AND map.left_at IS NULL
+       ORDER BY map.joined_at ASC`,
+      [meetingId]
+    );
+
+    return participants;
+  }
+
+  /**
+   * Get meeting session history
+   * @param {number} meetingId - Meeting ID
+   * @returns {Array} List of session records
+   */
+  static async getMeetingSessions(meetingId) {
+    const [sessions] = await db.query(
+      `SELECT 
+        ms.*,
+        u1.full_name as started_by_name,
+        u2.full_name as ended_by_name,
+        CASE 
+          WHEN ms.ended_at IS NULL THEN 'active'
+          ELSE 'ended'
+        END as status
+       FROM meeting_sessions ms
+       LEFT JOIN users u1 ON ms.started_by = u1.id
+       LEFT JOIN users u2 ON ms.ended_by = u2.id
+       WHERE ms.meeting_id = ?
+       ORDER BY ms.started_at DESC`,
+      [meetingId]
+    );
+
+    return sessions;
+  }
+
+  /**
+   * Get current active session for a meeting
+   * @param {number} meetingId - Meeting ID
+   * @returns {Object|null} Active session or null
+   */
+  static async getActiveSession(meetingId) {
+    const [sessions] = await db.query(
+      `SELECT * FROM meeting_sessions 
+       WHERE meeting_id = ? AND ended_at IS NULL
+       ORDER BY started_at DESC LIMIT 1`,
+      [meetingId]
+    );
+
+    return sessions.length > 0 ? sessions[0] : null;
+  }
+
+  /**
+   * Get meeting statistics
+   * @param {number} meetingId - Meeting ID
+   * @returns {Object} Meeting stats
+   */
+  static async getMeetingStats(meetingId) {
+    const [stats] = await db.query(
+      `SELECT 
+        COUNT(DISTINCT ms.id) as total_sessions,
+        SUM(ms.duration_seconds) as total_duration_seconds,
+        AVG(ms.duration_seconds) as avg_duration_seconds,
+        MAX(ms.max_concurrent_participants) as max_concurrent_participants,
+        COUNT(DISTINCT map.user_id) as unique_participants_all_time,
+        SUM(CASE WHEN ms.recording_status = 'available' THEN 1 ELSE 0 END) as recorded_sessions_count
+       FROM meeting_sessions ms
+       LEFT JOIN meeting_active_participants map ON ms.id = map.session_id
+       WHERE ms.meeting_id = ?`,
+      [meetingId]
+    );
+
+    return stats.length > 0 ? stats[0] : null;
+  }
+
+  /**
+   * Log meeting event
+   * @param {number} meetingId - Meeting ID
+   * @param {string} eventType - Event type
+   * @param {number} userId - User ID who triggered event
+   * @param {Object} eventData - Additional event data
+   */
+  static async logMeetingEvent(meetingId, eventType, userId, eventData = null) {
+    // Get current session
+    const session = await this.getActiveSession(meetingId);
+    const sessionId = session ? session.id : null;
+
+    await db.query(
+      `INSERT INTO meeting_events 
+       (meeting_id, session_id, user_id, event_type, event_data)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        meetingId,
+        sessionId,
+        userId,
+        eventType,
+        eventData ? JSON.stringify(eventData) : null,
+      ]
+    );
+  }
+
+  /**
+   * Get meeting events log
+   * @param {number} meetingId - Meeting ID
+   * @param {number} limit - Number of events to return
+   * @returns {Array} List of events
+   */
+  static async getMeetingEvents(meetingId, limit = 50) {
+    const [events] = await db.query(
+      `SELECT 
+        me.*,
+        u.full_name as user_name,
+        u.username
+       FROM meeting_events me
+       LEFT JOIN users u ON me.user_id = u.id
+       WHERE me.meeting_id = ?
+       ORDER BY me.created_at DESC
+       LIMIT ?`,
+      [meetingId, limit]
+    );
+
+    return events;
+  }
 }
 
 module.exports = Meeting;
