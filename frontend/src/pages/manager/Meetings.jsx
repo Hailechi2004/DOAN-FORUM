@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import {
   Box,
@@ -23,6 +23,8 @@ import {
   Alert,
   CircularProgress,
   InputAdornment,
+  Tooltip,
+  Badge,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -35,8 +37,18 @@ import {
 import { format } from "date-fns";
 import { useSnackbar } from "notistack";
 import axiosInstance from "../../utils/axios";
+import JitsiMeeting from "../../components/JitsiMeeting";
+import { useDispatch } from "react-redux";
+import {
+  startMeeting,
+  joinMeeting,
+  endMeeting,
+  fetchActiveParticipants,
+} from "../../store/slices/meetingSlice";
+import socketService from "../../services/socketService";
 
 const ManagerMeetings = () => {
+  const dispatch = useDispatch();
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useSelector((state) => state.auth);
 
@@ -50,6 +62,9 @@ const ManagerMeetings = () => {
   const [dialogMode, setDialogMode] = useState("add");
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  // Jitsi Meeting states
+  const [openJitsiDialog, setOpenJitsiDialog] = useState(false);
+  const [activeMeetingSession, setActiveMeetingSession] = useState(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -64,6 +79,12 @@ const ManagerMeetings = () => {
   useEffect(() => {
     if (user?.department_id) {
       fetchMeetings();
+      
+      // Connect Socket.io if authenticated
+      const token = localStorage.getItem('accessToken');
+      if (token && !socketService.socket?.connected) {
+        socketService.connect(token);
+      }
     }
   }, [page, rowsPerPage, searchTerm, user?.department_id]);
 
@@ -185,6 +206,107 @@ const ManagerMeetings = () => {
       enqueueSnackbar("Failed to delete meeting", { variant: "error" });
     }
   };
+
+  // Jitsi Meeting Handlers
+  const handleStartMeeting = async (meeting) => {
+    try {
+      const result = await dispatch(startMeeting(meeting.id)).unwrap();
+      setActiveMeetingSession(result.meeting);
+      setOpenJitsiDialog(true);
+      enqueueSnackbar("Meeting started successfully", { variant: "success" });
+    } catch (error) {
+      console.error("Error starting meeting:", error);
+      enqueueSnackbar("Failed to start meeting", { variant: "error" });
+    }
+  };
+
+  const handleJoinMeeting = async (meeting) => {
+    try {
+      const result = await dispatch(joinMeeting(meeting.id)).unwrap();
+      setActiveMeetingSession(result.meeting);
+      setOpenJitsiDialog(true);
+      enqueueSnackbar("Joined meeting successfully", { variant: "success" });
+    } catch (error) {
+      console.error("Error joining meeting:", error);
+      enqueueSnackbar("Failed to join meeting", { variant: "error" });
+    }
+  };
+
+  const handleEndMeeting = async () => {
+    if (activeMeetingSession) {
+      try {
+        await dispatch(endMeeting(activeMeetingSession.id)).unwrap();
+        setOpenJitsiDialog(false);
+        setActiveMeetingSession(null);
+        fetchMeetings();
+        enqueueSnackbar("Meeting ended successfully", { variant: "success" });
+      } catch (error) {
+        console.error("Error ending meeting:", error);
+        enqueueSnackbar("Failed to end meeting", { variant: "error" });
+      }
+    }
+  };
+
+  const handleCloseJitsiDialog = useCallback(() => {
+    setOpenJitsiDialog(false);
+    setActiveMeetingSession(null);
+  }, []);
+
+  const handleParticipantJoined = useCallback((participant) => {
+    console.log("Participant joined:", participant);
+    if (activeMeetingSession) {
+      dispatch(fetchActiveParticipants(activeMeetingSession.id));
+    }
+  }, [activeMeetingSession, dispatch]);
+
+  const handleParticipantLeft = useCallback((participant) => {
+    console.log("Participant left:", participant);
+    if (activeMeetingSession) {
+      dispatch(fetchActiveParticipants(activeMeetingSession.id));
+    }
+  }, [activeMeetingSession, dispatch]);
+
+  // Socket.io listeners for real-time updates
+  useEffect(() => {
+    const handleMeetingStarted = (data) => {
+      console.log("Meeting started:", data);
+      fetchMeetings();
+    };
+
+    const handleMeetingEnded = (data) => {
+      console.log("Meeting ended:", data);
+      fetchMeetings();
+      if (activeMeetingSession?.id === data.meetingId) {
+        handleCloseJitsiDialog();
+      }
+    };
+
+    const handleUserJoined = (data) => {
+      console.log("User joined meeting:", data);
+      if (activeMeetingSession?.id === data.meetingId) {
+        dispatch(fetchActiveParticipants(data.meetingId));
+      }
+    };
+
+    const handleUserLeft = (data) => {
+      console.log("User left meeting:", data);
+      if (activeMeetingSession?.id === data.meetingId) {
+        dispatch(fetchActiveParticipants(data.meetingId));
+      }
+    };
+
+    socketService.on("meeting:started", handleMeetingStarted);
+    socketService.on("meeting:ended", handleMeetingEnded);
+    socketService.on("meeting:user-joined", handleUserJoined);
+    socketService.on("meeting:user-left", handleUserLeft);
+
+    return () => {
+      socketService.off("meeting:started", handleMeetingStarted);
+      socketService.off("meeting:ended", handleMeetingEnded);
+      socketService.off("meeting:user-joined", handleUserJoined);
+      socketService.off("meeting:user-left", handleUserLeft);
+    };
+  }, [activeMeetingSession, dispatch, handleCloseJitsiDialog, fetchMeetings]);
 
   if (!user?.department_id) {
     return (
@@ -337,6 +459,55 @@ const ManagerMeetings = () => {
                       )}
                     </TableCell>
                     <TableCell align="right">
+                      {/* Jitsi Meeting Button */}
+                      {meeting.jitsi_room_name ? (
+                        <Tooltip title="Join Jitsi Video Meeting" arrow>
+                          <Badge
+                            badgeContent="LIVE"
+                            color="error"
+                            sx={{
+                              '& .MuiBadge-badge': {
+                                fontSize: '0.5rem',
+                                height: '14px',
+                                minWidth: '14px',
+                                padding: '0 4px'
+                              }
+                            }}
+                          >
+                            <IconButton
+                              size="small"
+                              onClick={() => handleJoinMeeting(meeting)}
+                              sx={{ 
+                                color: "#9c27b0",
+                                animation: 'pulse 2s infinite',
+                                '@keyframes pulse': {
+                                  '0%, 100%': { opacity: 1 },
+                                  '50%': { opacity: 0.6 }
+                                }
+                              }}
+                            >
+                              <VideoCallIcon />
+                            </IconButton>
+                          </Badge>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title="Start Jitsi Video Conference" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleStartMeeting(meeting)}
+                            sx={{ 
+                              color: "#9c27b0",
+                              '&:hover': {
+                                backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                                transform: 'scale(1.1)'
+                              },
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <VideoCallIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                       <IconButton
                         size="small"
                         color="primary"
@@ -448,6 +619,7 @@ const ManagerMeetings = () => {
                 value={formData.meeting_link}
                 onChange={handleInputChange}
                 placeholder="https://meet.google.com/..."
+                helperText="Optional: External meeting link"
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -458,8 +630,13 @@ const ManagerMeetings = () => {
               />
             </Grid>
             <Grid item xs={12}>
-              <Alert severity="info">
-                This meeting will be created for your department only
+              <Alert severity="info" icon={<VideoCallIcon />}>
+                <Typography variant="body2" fontWeight="bold" gutterBottom>
+                  Department Meeting • Jitsi Video Conferencing Available
+                </Typography>
+                <Typography variant="body2">
+                  This meeting will be created for your department. Click the purple video button to start Jitsi conference anytime!
+                </Typography>
               </Alert>
             </Grid>
           </Grid>
@@ -488,6 +665,32 @@ const ManagerMeetings = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Jitsi Meeting Dialog */}
+      {activeMeetingSession && (
+        <JitsiMeeting
+          open={openJitsiDialog}
+          onClose={handleCloseJitsiDialog}
+          roomName={activeMeetingSession.jitsi_room_name}
+          meetingTitle={activeMeetingSession.title}
+          meetingId={activeMeetingSession.id}
+          jitsiDomain={
+            activeMeetingSession.jitsi_url?.split("/")[2] || "meet.jit.si"
+          }
+          onParticipantJoined={handleParticipantJoined}
+          onParticipantLeft={handleParticipantLeft}
+          onVideoConferenceJoined={() => {
+            console.log("User joined conference");
+          }}
+          onVideoConferenceLeft={() => {
+            console.log("User left conference");
+            handleCloseJitsiDialog();
+          }}
+          onReadyToClose={() => {
+            handleCloseJitsiDialog();
+          }}
+        />
+      )}
     </Box>
   );
 };

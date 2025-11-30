@@ -44,6 +44,7 @@ import Departments from "./pages/employee/Departments";
 import Teams from "./pages/employee/Teams";
 import EmployeeProjects from "./pages/employee/Projects";
 import EmployeeProjectDetail from "./pages/employee/ProjectDetail";
+import TestJitsi from "./pages/TestJitsi";
 
 function App() {
   return (
@@ -73,6 +74,7 @@ function App() {
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
+              <Route path="/test-jitsi" element={<TestJitsi />} />
 
               {/* Admin/Manager routes */}
               <Route

@@ -31,11 +31,15 @@ class JitsiService {
    */
   createMeetingLink(meetingId, roomName = null) {
     const room = roomName || this.generateRoomName(meetingId);
-    // Add config parameters to disable lobby and prejoin
+    // Add config parameters to disable lobby, prejoin, and authentication
     const configParams = [
       'config.prejoinPageEnabled=false',
       'config.startWithAudioMuted=false',
       'config.startWithVideoMuted=false',
+      'config.requireDisplayName=false',
+      'config.enableLobbyChat=false',
+      'config.disableLobby=true',
+      'config.enableAuthenticationUI=false',
     ].join('&');
     return `https://${this.jitsiDomain}/${room}#${configParams}`;
   }

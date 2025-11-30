@@ -177,6 +177,94 @@ export const removeAttachment = createAsyncThunk(
   }
 );
 
+// ============ JITSI MEETING ACTIONS ============
+
+export const startMeeting = createAsyncThunk(
+  "meetings/start",
+  async (meetingId, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/meetings/${meetingId}/start`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+export const joinMeeting = createAsyncThunk(
+  "meetings/join",
+  async (meetingId, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/meetings/${meetingId}/join`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+export const endMeeting = createAsyncThunk(
+  "meetings/end",
+  async (meetingId, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/meetings/${meetingId}/end`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+export const fetchActiveParticipants = createAsyncThunk(
+  "meetings/fetchActiveParticipants",
+  async (meetingId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/meetings/${meetingId}/active-participants`
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+export const fetchMeetingSessions = createAsyncThunk(
+  "meetings/fetchSessions",
+  async (meetingId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/meetings/${meetingId}/sessions`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+export const fetchMeetingStats = createAsyncThunk(
+  "meetings/fetchStats",
+  async (meetingId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/meetings/${meetingId}/stats`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+export const fetchJitsiConfig = createAsyncThunk(
+  "meetings/fetchJitsiConfig",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/meetings/jitsi/config");
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 const meetingSlice = createSlice({
   name: "meetings",
   initialState: {
@@ -184,6 +272,11 @@ const meetingSlice = createSlice({
     currentMeeting: null,
     attendees: [],
     attachments: [],
+    activeParticipants: [],
+    sessions: [],
+    stats: null,
+    jitsiConfig: null,
+    jitsiData: null, // { roomName, jitsiUrl, jitsiDomain }
     pagination: {
       page: 1,
       limit: 20,
@@ -191,6 +284,7 @@ const meetingSlice = createSlice({
       totalPages: 0,
     },
     loading: false,
+    jitsiLoading: false,
     error: null,
   },
   reducers: {
@@ -198,9 +292,17 @@ const meetingSlice = createSlice({
       state.currentMeeting = null;
       state.attendees = [];
       state.attachments = [];
+      state.activeParticipants = [];
+      state.jitsiData = null;
     },
     clearError: (state) => {
       state.error = null;
+    },
+    setJitsiData: (state, action) => {
+      state.jitsiData = action.payload;
+    },
+    clearJitsiData: (state) => {
+      state.jitsiData = null;
     },
   },
   extraReducers: (builder) => {
@@ -315,9 +417,101 @@ const meetingSlice = createSlice({
       .addCase(fetchAttachments.fulfilled, (state, action) => {
         state.attachments =
           action.payload.data || action.payload.attachments || action.payload;
+      })
+
+      // ============ JITSI MEETING REDUCERS ============
+
+      // Start meeting
+      .addCase(startMeeting.pending, (state) => {
+        state.jitsiLoading = true;
+        state.error = null;
+      })
+      .addCase(startMeeting.fulfilled, (state, action) => {
+        state.jitsiLoading = false;
+        const data = action.payload.data || action.payload;
+        state.jitsiData = {
+          roomName: data.roomName,
+          jitsiUrl: data.jitsiUrl,
+          jitsiDomain: data.jitsiDomain,
+        };
+        // Update current meeting with new meeting_link
+        if (data.meeting) {
+          state.currentMeeting = data.meeting;
+          const index = state.meetings.findIndex(
+            (m) => m.id === data.meeting.id
+          );
+          if (index !== -1) {
+            state.meetings[index] = data.meeting;
+          }
+        }
+      })
+      .addCase(startMeeting.rejected, (state, action) => {
+        state.jitsiLoading = false;
+        state.error = action.payload;
+      })
+
+      // Join meeting
+      .addCase(joinMeeting.pending, (state) => {
+        state.jitsiLoading = true;
+        state.error = null;
+      })
+      .addCase(joinMeeting.fulfilled, (state, action) => {
+        state.jitsiLoading = false;
+        const data = action.payload.data || action.payload;
+        state.jitsiData = {
+          roomName: data.roomName,
+          jitsiUrl: data.jitsiUrl,
+          jitsiDomain: data.jitsiDomain,
+          userInfo: data.userInfo,
+        };
+        if (data.meeting) {
+          state.currentMeeting = data.meeting;
+        }
+      })
+      .addCase(joinMeeting.rejected, (state, action) => {
+        state.jitsiLoading = false;
+        state.error = action.payload;
+      })
+
+      // End meeting
+      .addCase(endMeeting.pending, (state) => {
+        state.jitsiLoading = true;
+      })
+      .addCase(endMeeting.fulfilled, (state, action) => {
+        state.jitsiLoading = false;
+        state.jitsiData = null;
+        const meeting = action.payload.data || action.payload;
+        if (meeting) {
+          state.currentMeeting = meeting;
+        }
+      })
+      .addCase(endMeeting.rejected, (state, action) => {
+        state.jitsiLoading = false;
+        state.error = action.payload;
+      })
+
+      // Fetch active participants
+      .addCase(fetchActiveParticipants.fulfilled, (state, action) => {
+        state.activeParticipants = action.payload.data || action.payload;
+      })
+
+      // Fetch sessions
+      .addCase(fetchMeetingSessions.fulfilled, (state, action) => {
+        state.sessions = action.payload.data || action.payload;
+      })
+
+      // Fetch stats
+      .addCase(fetchMeetingStats.fulfilled, (state, action) => {
+        state.stats = action.payload.data || action.payload;
+      })
+
+      // Fetch Jitsi config
+      .addCase(fetchJitsiConfig.fulfilled, (state, action) => {
+        state.jitsiConfig = action.payload.data || action.payload;
       });
   },
 });
 
-export const { clearCurrentMeeting, clearError } = meetingSlice.actions;
+export const { clearCurrentMeeting, clearError, setJitsiData, clearJitsiData } =
+  meetingSlice.actions;
 export default meetingSlice.reducer;
