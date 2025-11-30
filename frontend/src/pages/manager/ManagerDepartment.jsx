@@ -42,7 +42,7 @@ const ManagerDepartment = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  //
   useEffect(() => {
     fetchDepartmentData();
   }, []);
