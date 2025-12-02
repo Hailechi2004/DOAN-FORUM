@@ -13,13 +13,17 @@ class UserModel {
   async findById(id) {
     const [rows] = await db.execute(
       `SELECT u.*, p.full_name, p.phone, p.avatar_url, p.bio, p.birth_date,
-              p.address, p.gender, d.name as department_name, t.name as team_name
+              p.address, p.gender, d.name as department_name, t.name as team_name,
+              r.name as role_name, ur.department_id as role_department_id
        FROM users u
        LEFT JOIN profiles p ON u.id = p.user_id
        LEFT JOIN employee_records er ON u.id = er.user_id AND er.status = 'active'
        LEFT JOIN departments d ON er.department_id = d.id
        LEFT JOIN teams t ON er.team_id = t.id
-       WHERE u.id = ? AND u.deleted_at IS NULL`,
+       LEFT JOIN user_roles ur ON u.id = ur.user_id
+       LEFT JOIN roles r ON ur.role_id = r.id
+       WHERE u.id = ? AND u.deleted_at IS NULL
+       LIMIT 1`,
       [id]
     );
     return rows[0];

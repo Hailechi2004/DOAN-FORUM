@@ -13,7 +13,7 @@ const authenticate = async (req, res, next) => {
     const token = authHeader.substring(7);
     const decoded = tokenService.verifyAccessToken(token);
 
-    // Get user from database
+    // Get user from database with role and department
     const user = await UserModel.findById(decoded.userId);
 
     if (!user) {
@@ -25,10 +25,17 @@ const authenticate = async (req, res, next) => {
       throw new ApiError(403, "Account is disabled");
     }
 
+    // Get role from user_roles JOIN (role_name)
+    const role = user.role_name || null;
+    const department_id = user.role_department_id || null;
+
     req.user = {
       id: user.id,
       email: user.email,
       username: user.username,
+      role: role,
+      department_id: department_id,
+      is_system_admin: user.is_system_admin === 1,
     };
 
     next();

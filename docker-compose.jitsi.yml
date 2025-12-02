@@ -1,0 +1,104 @@
+version: "3.8"
+
+services:
+  # Jitsi Web (Frontend)
+  web:
+    image: jitsi/web:stable-8719
+    restart: unless-stopped
+    ports:
+      - "8443:443"
+      - "8000:80"
+    environment:
+      - ENABLE_AUTH=0
+      - ENABLE_GUESTS=1
+      - ENABLE_LETSENCRYPT=0
+      - ENABLE_HTTP_REDIRECT=0
+      - DISABLE_HTTPS=1
+      - JICOFO_COMPONENT_SECRET=dacnforumjitsi2025secret123456
+      - JICOFO_AUTH_USER=focus
+      - JICOFO_AUTH_PASSWORD=focuspass2025secret
+      - JVB_AUTH_USER=jvb
+      - JVB_AUTH_PASSWORD=jvbpass2025secret
+      - JIBRI_RECORDER_USER=recorder
+      - JIBRI_RECORDER_PASSWORD=recorderpass2025
+      - ENABLE_RECORDING=0
+      - TZ=Asia/Ho_Chi_Minh
+    networks:
+      jitsi:
+        aliases:
+          - meet.jitsi
+    depends_on:
+      - prosody
+
+  # Jitsi Prosody (XMPP Server)
+  prosody:
+    image: jitsi/prosody:stable-8719
+    restart: unless-stopped
+    environment:
+      - AUTH_TYPE=internal
+      - ENABLE_AUTH=0
+      - ENABLE_GUESTS=1
+      - JICOFO_COMPONENT_SECRET=dacnforumjitsi2025secret123456
+      - JICOFO_AUTH_USER=focus
+      - JICOFO_AUTH_PASSWORD=focuspass2025secret
+      - JVB_AUTH_USER=jvb
+      - JVB_AUTH_PASSWORD=jvbpass2025secret
+      - JIBRI_RECORDER_USER=recorder
+      - JIBRI_RECORDER_PASSWORD=recorderpass2025
+      - TZ=Asia/Ho_Chi_Minh
+    networks:
+      jitsi:
+        aliases:
+          - xmpp.meet.jitsi
+    volumes:
+      - prosody_data:/var/lib/prosody
+
+  # Jitsi Jicofo (Conference Focus)
+  jicofo:
+    image: jitsi/jicofo:stable-8719
+    restart: unless-stopped
+    environment:
+      - AUTH_TYPE=internal
+      - ENABLE_AUTH=0
+      - JICOFO_COMPONENT_SECRET=dacnforumjitsi2025secret123456
+      - JICOFO_AUTH_USER=focus
+      - JICOFO_AUTH_PASSWORD=focuspass2025secret
+      - JVB_BREWERY_MUC=jvbbrewery
+      - JIGASI_BREWERY_MUC=jigasibrewery
+      - JIBRI_BREWERY_MUC=jibribrewery
+      - TZ=Asia/Ho_Chi_Minh
+    depends_on:
+      - prosody
+    networks:
+      jitsi:
+
+  # Jitsi Video Bridge
+  jvb:
+    image: jitsi/jvb:stable-8719
+    restart: unless-stopped
+    ports:
+      - "10000:10000/udp"
+      - "4443:4443"
+    environment:
+      - JVB_AUTH_USER=jvb
+      - JVB_AUTH_PASSWORD=jvbpass2025secret
+      - JVB_BREWERY_MUC=jvbbrewery
+      - JVB_PORT=10000
+      - JVB_STUN_SERVERS=stun.l.google.com:19302,stun1.l.google.com:19302
+      - JVB_ENABLE_APIS=rest
+      - JVB_ENABLE_STATISTICS=1
+      - TZ=Asia/Ho_Chi_Minh
+    depends_on:
+      - prosody
+    networks:
+      jitsi:
+    volumes:
+      - jvb_data:/tmp
+
+networks:
+  jitsi:
+    driver: bridge
+
+volumes:
+  prosody_data:
+  jvb_data:

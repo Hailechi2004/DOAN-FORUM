@@ -210,28 +210,47 @@ class MeetingController {
       const meetingId = req.params.id;
       const userId = req.user.id;
 
+      // Debug log
+      console.log("🔍 Start Meeting Debug:");
+      console.log("  User ID:", userId);
+      console.log("  User Role:", req.user.role);
+      console.log("  User Department:", req.user.department_id);
+
       // Get meeting details with attendees
       const meeting = await Meeting.findById(meetingId);
       if (!meeting) {
         return ApiResponse.error(res, "Meeting not found", 404);
       }
 
+      console.log("  Meeting Organizer:", meeting.organizer_id);
+      console.log("  Meeting Department:", meeting.department_id);
+
       // Get attendees to check permissions
       const attendees = await Meeting.getAttendees(meetingId);
+      console.log(
+        "  Attendees:",
+        attendees.map((a) => ({ user_id: a.user_id, status: a.status }))
+      );
 
       // Check permissions - Allow:
       // 1. Organizer
-      // 2. Admin (any role)
+      // 2. Admin (any role containing "admin")
       // 3. Manager (same department)
       // 4. Accepted attendee
       const isOrganizer = meeting.organizer_id === userId;
-      const isAdmin = req.user.role === "admin" || req.user.role === "System Admin";
+      const isAdmin = req.user.role?.toLowerCase().includes("admin");
       const isManager =
-        (req.user.role === "manager" || req.user.role === "Department Manager") &&
+        req.user.role?.toLowerCase().includes("manager") &&
         req.user.department_id === meeting.department_id;
       const isAcceptedAttendee = attendees.some(
         (a) => a.user_id === userId && a.status === "accepted"
       );
+
+      console.log("  Permissions:");
+      console.log("    isOrganizer:", isOrganizer);
+      console.log("    isAdmin:", isAdmin);
+      console.log("    isManager:", isManager);
+      console.log("    isAcceptedAttendee:", isAcceptedAttendee);
 
       if (!isOrganizer && !isAdmin && !isManager && !isAcceptedAttendee) {
         return ApiResponse.error(
@@ -258,28 +277,8 @@ class MeetingController {
         userId
       );
 
-      // Broadcast meeting started event via Socket.io
-      const app = require("../../app");
-      const socketHandler = app.getSocketHandler();
-      if (socketHandler) {
-        socketHandler.broadcastMeetingStarted(
-          meetingId,
-          updatedMeeting,
-          userId
-        );
-
-        // Notify all attendees
-        if (meeting.attendees && meeting.attendees.length > 0) {
-          const attendeeIds = meeting.attendees.map((a) => a.user_id);
-          socketHandler.notifyMeetingAttendees(attendeeIds, {
-            type: "meeting_started",
-            meeting_id: meetingId,
-            meeting_title: meeting.title,
-            started_by: userId,
-            jitsi_url: jitsiLink,
-          });
-        }
-      }
+      // TODO: Broadcast meeting started event via Socket.io
+      // (Socket handler integration pending)
 
       ApiResponse.success(
         res,

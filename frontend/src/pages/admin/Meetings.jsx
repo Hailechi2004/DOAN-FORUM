@@ -112,10 +112,10 @@ const Meetings = () => {
     dispatch(fetchMeetings({ page: page + 1, limit: rowsPerPage }));
     dispatch(fetchDepartments());
     fetchAllUsers();
-    
+
     // Connect Socket.io if authenticated
     if (user?.id) {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (token && !socketService.socket?.connected) {
         socketService.connect(token);
       }
@@ -321,11 +321,23 @@ const Meetings = () => {
   // Jitsi Meeting Handlers
   const handleStartMeeting = async (meeting) => {
     try {
+      console.log("🚀 Starting meeting:", meeting);
       const result = await dispatch(startMeeting(meeting.id)).unwrap();
-      setActiveMeetingSession(result.meeting);
+      console.log("✅ Start meeting result:", result);
+
+      // Map backend response to session format
+      const sessionData = {
+        ...result.meeting,
+        jitsi_room_name: result.roomName,
+        jitsi_url: result.jitsiUrl,
+        jitsi_domain: result.jitsiDomain,
+      };
+
+      console.log("🎥 Meeting session:", sessionData);
+      setActiveMeetingSession(sessionData);
       setOpenJitsiDialog(true);
     } catch (error) {
-      console.error("Error starting meeting:", error);
+      console.error("❌ Error starting meeting:", error);
     }
   };
 
@@ -357,19 +369,25 @@ const Meetings = () => {
     setActiveMeetingSession(null);
   }, []);
 
-  const handleParticipantJoined = useCallback((participant) => {
-    console.log("Participant joined:", participant);
-    if (activeMeetingSession) {
-      dispatch(fetchActiveParticipants(activeMeetingSession.id));
-    }
-  }, [activeMeetingSession, dispatch]);
+  const handleParticipantJoined = useCallback(
+    (participant) => {
+      console.log("Participant joined:", participant);
+      if (activeMeetingSession) {
+        dispatch(fetchActiveParticipants(activeMeetingSession.id));
+      }
+    },
+    [activeMeetingSession, dispatch]
+  );
 
-  const handleParticipantLeft = useCallback((participant) => {
-    console.log("Participant left:", participant);
-    if (activeMeetingSession) {
-      dispatch(fetchActiveParticipants(activeMeetingSession.id));
-    }
-  }, [activeMeetingSession, dispatch]);
+  const handleParticipantLeft = useCallback(
+    (participant) => {
+      console.log("Participant left:", participant);
+      if (activeMeetingSession) {
+        dispatch(fetchActiveParticipants(activeMeetingSession.id));
+      }
+    },
+    [activeMeetingSession, dispatch]
+  );
 
   // Socket.io listeners for real-time updates
   useEffect(() => {
@@ -412,7 +430,13 @@ const Meetings = () => {
       socketService.off("meeting:user-joined", handleUserJoined);
       socketService.off("meeting:user-left", handleUserLeft);
     };
-  }, [dispatch, page, rowsPerPage, activeMeetingSession, handleCloseJitsiDialog]);
+  }, [
+    dispatch,
+    page,
+    rowsPerPage,
+    activeMeetingSession,
+    handleCloseJitsiDialog,
+  ]);
 
   const formatDateTime = (datetime) => {
     if (!datetime) return "-";
@@ -517,7 +541,7 @@ const Meetings = () => {
       >
         <CardContent>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={8}>
+            <Grid size={{ xs: 12, md: 8 }}>
               <TextField
                 fullWidth
                 placeholder="Search meetings..."
@@ -539,7 +563,7 @@ const Meetings = () => {
                 }}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Button
                 fullWidth
                 variant="contained"
@@ -676,24 +700,24 @@ const Meetings = () => {
                                     badgeContent="LIVE"
                                     color="error"
                                     sx={{
-                                      '& .MuiBadge-badge': {
-                                        fontSize: '0.5rem',
-                                        height: '14px',
-                                        minWidth: '14px',
-                                        padding: '0 4px'
-                                      }
+                                      "& .MuiBadge-badge": {
+                                        fontSize: "0.5rem",
+                                        height: "14px",
+                                        minWidth: "14px",
+                                        padding: "0 4px",
+                                      },
                                     }}
                                   >
                                     <IconButton
                                       size="small"
                                       onClick={() => handleJoinMeeting(meeting)}
-                                      sx={{ 
+                                      sx={{
                                         color: "#9c27b0",
-                                        animation: 'pulse 2s infinite',
-                                        '@keyframes pulse': {
-                                          '0%, 100%': { opacity: 1 },
-                                          '50%': { opacity: 0.6 }
-                                        }
+                                        animation: "pulse 2s infinite",
+                                        "@keyframes pulse": {
+                                          "0%, 100%": { opacity: 1 },
+                                          "50%": { opacity: 0.6 },
+                                        },
                                       }}
                                     >
                                       <VideoCallIcon fontSize="small" />
@@ -701,17 +725,21 @@ const Meetings = () => {
                                   </Badge>
                                 </Tooltip>
                               ) : (
-                                <Tooltip title="Start Jitsi Video Conference" arrow>
+                                <Tooltip
+                                  title="Start Jitsi Video Conference"
+                                  arrow
+                                >
                                   <IconButton
                                     size="small"
                                     onClick={() => handleStartMeeting(meeting)}
-                                    sx={{ 
+                                    sx={{
                                       color: "#9c27b0",
-                                      '&:hover': {
-                                        backgroundColor: 'rgba(156, 39, 176, 0.1)',
-                                        transform: 'scale(1.1)'
+                                      "&:hover": {
+                                        backgroundColor:
+                                          "rgba(156, 39, 176, 0.1)",
+                                        transform: "scale(1.1)",
                                       },
-                                      transition: 'all 0.2s'
+                                      transition: "all 0.2s",
                                     }}
                                   >
                                     <VideoCallIcon fontSize="small" />
@@ -780,7 +808,7 @@ const Meetings = () => {
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           <Grid container spacing={2}>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 label="Title"
@@ -790,7 +818,7 @@ const Meetings = () => {
                 required
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 label="Description"
@@ -801,7 +829,7 @@ const Meetings = () => {
                 rows={3}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Autocomplete
                 multiple={true}
                 disabled={false}
@@ -846,7 +874,7 @@ const Meetings = () => {
                 }
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Start Time"
@@ -860,7 +888,7 @@ const Meetings = () => {
                 }}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="End Time"
@@ -873,7 +901,7 @@ const Meetings = () => {
                 }}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 label="Location"
@@ -882,7 +910,7 @@ const Meetings = () => {
                 onChange={handleInputChange}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 label="Meeting Link"
@@ -898,21 +926,33 @@ const Meetings = () => {
                 }}
               />
             </Grid>
-            <Grid item xs={12}>
-              <Alert severity="info" sx={{ display: 'flex', alignItems: 'center' }}>
+            <Grid size={{ xs: 12 }}>
+              <Alert
+                severity="info"
+                sx={{ display: "flex", alignItems: "center" }}
+              >
                 <Box>
                   <Typography variant="body2" fontWeight="bold" gutterBottom>
                     🎥 Jitsi Video Conferencing
                   </Typography>
                   <Typography variant="body2">
-                    After creating the meeting, you can start a <strong>Jitsi video conference</strong> by clicking the purple 
-                    <VideoCallIcon sx={{ fontSize: 16, mx: 0.5, verticalAlign: 'middle', color: '#9c27b0' }} />
+                    After creating the meeting, you can start a{" "}
+                    <strong>Jitsi video conference</strong> by clicking the
+                    purple
+                    <VideoCallIcon
+                      sx={{
+                        fontSize: 16,
+                        mx: 0.5,
+                        verticalAlign: "middle",
+                        color: "#9c27b0",
+                      }}
+                    />
                     button in the meeting list. No additional setup required!
                   </Typography>
                 </Box>
               </Alert>
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Autocomplete
                 multiple
                 options={allUsers}
@@ -983,18 +1023,18 @@ const Meetings = () => {
         <DialogContent sx={{ mt: 2 }}>
           {selectedMeeting && (
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Typography variant="h6" fontWeight={600}>
                   {selectedMeeting.title}
                 </Typography>
                 <Box sx={{ mt: 1 }}>{getStatusChip(selectedMeeting)}</Box>
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Typography variant="body2" color="text.secondary">
                   {selectedMeeting.description || "No description"}
                 </Typography>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="caption" color="text.secondary">
                   Start Time
                 </Typography>
@@ -1002,7 +1042,7 @@ const Meetings = () => {
                   {formatDateTime(selectedMeeting.start_time)}
                 </Typography>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="caption" color="text.secondary">
                   End Time
                 </Typography>
@@ -1010,7 +1050,7 @@ const Meetings = () => {
                   {formatDateTime(selectedMeeting.end_time)}
                 </Typography>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="caption" color="text.secondary">
                   Location
                 </Typography>
@@ -1018,7 +1058,7 @@ const Meetings = () => {
                   {selectedMeeting.location || "-"}
                 </Typography>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="caption" color="text.secondary">
                   Department
                 </Typography>
@@ -1026,7 +1066,7 @@ const Meetings = () => {
                   {selectedMeeting.department_name || "-"}
                 </Typography>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="caption" color="text.secondary">
                   Organizer
                 </Typography>
@@ -1035,7 +1075,7 @@ const Meetings = () => {
                 </Typography>
               </Grid>
               {selectedMeeting.meeting_link && (
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="caption" color="text.secondary">
                     Meeting Link
                   </Typography>
@@ -1051,7 +1091,7 @@ const Meetings = () => {
                   </Typography>
                 </Grid>
               )}
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
                   Attendees ({attendees?.length || 0})
@@ -1083,7 +1123,7 @@ const Meetings = () => {
                   ))}
                 </List>
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
                   Attachments ({attachments?.length || 0})

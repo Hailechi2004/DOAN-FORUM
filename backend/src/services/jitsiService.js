@@ -33,14 +33,14 @@ class JitsiService {
     const room = roomName || this.generateRoomName(meetingId);
     // Add config parameters to disable lobby, prejoin, and authentication
     const configParams = [
-      'config.prejoinPageEnabled=false',
-      'config.startWithAudioMuted=false',
-      'config.startWithVideoMuted=false',
-      'config.requireDisplayName=false',
-      'config.enableLobbyChat=false',
-      'config.disableLobby=true',
-      'config.enableAuthenticationUI=false',
-    ].join('&');
+      "config.prejoinPageEnabled=false",
+      "config.startWithAudioMuted=false",
+      "config.startWithVideoMuted=false",
+      "config.requireDisplayName=false",
+      "config.enableLobbyChat=false",
+      "config.disableLobby=true",
+      "config.enableAuthenticationUI=false",
+    ].join("&");
     return `https://${this.jitsiDomain}/${room}#${configParams}`;
   }
 
@@ -68,7 +68,7 @@ class JitsiService {
     const isAcceptedAttendee = meeting.attendees?.some(
       (a) => a.user_id === userId && a.status === "accepted"
     );
-    
+
     if (isAcceptedAttendee) {
       return { allowed: true, reason: "Accepted attendee" };
     }
@@ -87,9 +87,9 @@ class JitsiService {
       return { allowed: true, reason: "Open meeting" };
     }
 
-    return { 
-      allowed: false, 
-      reason: "Not invited or invitation not accepted" 
+    return {
+      allowed: false,
+      reason: "Not invited or invitation not accepted",
     };
   }
 

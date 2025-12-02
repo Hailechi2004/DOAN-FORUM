@@ -41,6 +41,7 @@ import {
   Logout as LogoutIcon,
   AccountCircle as AccountCircleIcon,
   Dashboard as DashboardIcon,
+  VideoCall as VideoCallIcon,
 } from "@mui/icons-material";
 import { logout } from "../store/slices/authSlice";
 
@@ -117,6 +118,11 @@ const EmployeeLayout = () => {
       text: "Tasks",
       icon: <AssignmentIcon />,
       path: "/employee/tasks",
+    },
+    {
+      text: "Meetings",
+      icon: <VideoCallIcon />,
+      path: "/employee/meetings",
     },
     {
       text: "Calendar",

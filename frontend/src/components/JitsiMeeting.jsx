@@ -16,6 +16,8 @@ import {
   Close as CloseIcon,
   Videocam as VideocamIcon,
   People as PeopleIcon,
+  GridView as GridViewIcon,
+  Refresh as RefreshIcon,
 } from "@mui/icons-material";
 import { useSelector } from "react-redux";
 
@@ -40,7 +42,7 @@ const JitsiMeetingComponent = ({
   roomName,
   meetingTitle,
   meetingId,
-  jitsiDomain = "meet.jit.si",
+  jitsiDomain = "localhost:8000", // Use local Docker Jitsi
   onMeetingEnd,
   onUserJoined,
   onUserLeft,
@@ -49,6 +51,7 @@ const JitsiMeetingComponent = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [participantCount, setParticipantCount] = useState(0);
+  const [reloadKey, setReloadKey] = useState(0); // Key to force reload Jitsi component
   const apiRef = useRef(null);
 
   // Display name from user info
@@ -126,11 +129,50 @@ const JitsiMeetingComponent = ({
       }
     }
 
+    if (onClose) onClose();
     if (onMeetingEnd) {
-      onMeetingEnd();
+      onMeetingEnd({
+        meeting_id: meetingId,
+        ended_at: new Date().toISOString(),
+      });
+    }
+  };
+
+  // Helper functions to toggle Jitsi UI elements
+  const toggleFilmstrip = () => {
+    if (apiRef.current) {
+      apiRef.current.executeCommand("toggleFilmstrip");
+    }
+  };
+
+  const toggleParticipantsPane = () => {
+    if (apiRef.current) {
+      apiRef.current.executeCommand("toggleParticipantsPane");
+    }
+  };
+
+  const toggleTileView = () => {
+    if (apiRef.current) {
+      apiRef.current.executeCommand("toggleTileView");
+    }
+  };
+
+  const resetLayout = () => {
+    // The most reliable way to reset everything: reload the Jitsi component
+    setIsLoading(true);
+    setReloadKey((prev) => prev + 1); // This will unmount and remount JitsiMeeting
+
+    // Reset API ref
+    if (apiRef.current) {
+      try {
+        apiRef.current.dispose();
+      } catch (error) {
+        console.log("API already disposed");
+      }
+      apiRef.current = null;
     }
 
-    onClose();
+    console.log("Reloading Jitsi meeting to reset layout");
   };
 
   if (!open) return null;
@@ -177,6 +219,41 @@ const JitsiMeetingComponent = ({
             color="secondary"
             size="small"
           />
+
+          {/* Quick control buttons */}
+          <Stack direction="row" spacing={0.5}>
+            <IconButton
+              onClick={toggleFilmstrip}
+              sx={{ color: "white" }}
+              title="Hiển thị/Ẩn video thumbnails"
+              size="small"
+            >
+              <GridViewIcon fontSize="small" />
+            </IconButton>
+
+            <IconButton
+              onClick={toggleParticipantsPane}
+              sx={{ color: "white" }}
+              title="Hiển thị/Ẩn danh sách người tham gia"
+              size="small"
+            >
+              <PeopleIcon fontSize="small" />
+            </IconButton>
+
+            <IconButton
+              onClick={resetLayout}
+              sx={{
+                color: "white",
+                bgcolor: "rgba(255,255,255,0.15)",
+                "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
+              }}
+              title="Khôi phục giao diện mặc định"
+              size="small"
+            >
+              <RefreshIcon fontSize="small" />
+            </IconButton>
+          </Stack>
+
           <IconButton
             onClick={handleClose}
             sx={{ color: "white" }}
@@ -210,6 +287,7 @@ const JitsiMeetingComponent = ({
 
         {roomName && (
           <JitsiMeeting
+            key={reloadKey}
             domain={jitsiDomain}
             roomName={roomName}
             configOverwrite={{
@@ -218,13 +296,12 @@ const JitsiMeetingComponent = ({
               disableModeratorIndicator: false,
               enableEmailInStats: false,
               enableWelcomePage: false,
-              prejoinPageEnabled: false,
+              prejoinPageEnabled: true, // Enable prejoin page to show camera preview
               subject: meetingTitle,
               // Disable lobby/waiting room completely
               enableLobbyChat: false,
               enableInsecureRoomNameWarning: false,
               enableUserRolesBasedOnToken: false,
-              disableLobby: true,
               // Disable authentication requirement
               requireDisplayName: false,
               // Allow guest access

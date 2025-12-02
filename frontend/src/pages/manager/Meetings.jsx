@@ -79,9 +79,9 @@ const ManagerMeetings = () => {
   useEffect(() => {
     if (user?.department_id) {
       fetchMeetings();
-      
+
       // Connect Socket.io if authenticated
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (token && !socketService.socket?.connected) {
         socketService.connect(token);
       }
@@ -252,19 +252,25 @@ const ManagerMeetings = () => {
     setActiveMeetingSession(null);
   }, []);
 
-  const handleParticipantJoined = useCallback((participant) => {
-    console.log("Participant joined:", participant);
-    if (activeMeetingSession) {
-      dispatch(fetchActiveParticipants(activeMeetingSession.id));
-    }
-  }, [activeMeetingSession, dispatch]);
+  const handleParticipantJoined = useCallback(
+    (participant) => {
+      console.log("Participant joined:", participant);
+      if (activeMeetingSession) {
+        dispatch(fetchActiveParticipants(activeMeetingSession.id));
+      }
+    },
+    [activeMeetingSession, dispatch]
+  );
 
-  const handleParticipantLeft = useCallback((participant) => {
-    console.log("Participant left:", participant);
-    if (activeMeetingSession) {
-      dispatch(fetchActiveParticipants(activeMeetingSession.id));
-    }
-  }, [activeMeetingSession, dispatch]);
+  const handleParticipantLeft = useCallback(
+    (participant) => {
+      console.log("Participant left:", participant);
+      if (activeMeetingSession) {
+        dispatch(fetchActiveParticipants(activeMeetingSession.id));
+      }
+    },
+    [activeMeetingSession, dispatch]
+  );
 
   // Socket.io listeners for real-time updates
   useEffect(() => {
@@ -466,24 +472,24 @@ const ManagerMeetings = () => {
                             badgeContent="LIVE"
                             color="error"
                             sx={{
-                              '& .MuiBadge-badge': {
-                                fontSize: '0.5rem',
-                                height: '14px',
-                                minWidth: '14px',
-                                padding: '0 4px'
-                              }
+                              "& .MuiBadge-badge": {
+                                fontSize: "0.5rem",
+                                height: "14px",
+                                minWidth: "14px",
+                                padding: "0 4px",
+                              },
                             }}
                           >
                             <IconButton
                               size="small"
                               onClick={() => handleJoinMeeting(meeting)}
-                              sx={{ 
+                              sx={{
                                 color: "#9c27b0",
-                                animation: 'pulse 2s infinite',
-                                '@keyframes pulse': {
-                                  '0%, 100%': { opacity: 1 },
-                                  '50%': { opacity: 0.6 }
-                                }
+                                animation: "pulse 2s infinite",
+                                "@keyframes pulse": {
+                                  "0%, 100%": { opacity: 1 },
+                                  "50%": { opacity: 0.6 },
+                                },
                               }}
                             >
                               <VideoCallIcon />
@@ -495,13 +501,13 @@ const ManagerMeetings = () => {
                           <IconButton
                             size="small"
                             onClick={() => handleStartMeeting(meeting)}
-                            sx={{ 
+                            sx={{
                               color: "#9c27b0",
-                              '&:hover': {
-                                backgroundColor: 'rgba(156, 39, 176, 0.1)',
-                                transform: 'scale(1.1)'
+                              "&:hover": {
+                                backgroundColor: "rgba(156, 39, 176, 0.1)",
+                                transform: "scale(1.1)",
                               },
-                              transition: 'all 0.2s'
+                              transition: "all 0.2s",
                             }}
                           >
                             <VideoCallIcon />
@@ -635,7 +641,8 @@ const ManagerMeetings = () => {
                   Department Meeting • Jitsi Video Conferencing Available
                 </Typography>
                 <Typography variant="body2">
-                  This meeting will be created for your department. Click the purple video button to start Jitsi conference anytime!
+                  This meeting will be created for your department. Click the
+                  purple video button to start Jitsi conference anytime!
                 </Typography>
               </Alert>
             </Grid>

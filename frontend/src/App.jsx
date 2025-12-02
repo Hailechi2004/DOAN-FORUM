@@ -44,6 +44,7 @@ import Departments from "./pages/employee/Departments";
 import Teams from "./pages/employee/Teams";
 import EmployeeProjects from "./pages/employee/Projects";
 import EmployeeProjectDetail from "./pages/employee/ProjectDetail";
+import EmployeeMeetings from "./pages/employee/Meetings";
 import TestJitsi from "./pages/TestJitsi";
 
 function App() {
@@ -70,7 +71,12 @@ function App() {
             draggable
             pauseOnHover
           />
-          <Router>
+          <Router
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
@@ -145,6 +151,7 @@ function App() {
                   element={<EmployeeProjectDetail />}
                 />
                 <Route path="tasks" element={<div>Tasks (Coming Soon)</div>} />
+                <Route path="meetings" element={<EmployeeMeetings />} />
                 <Route
                   path="calendar"
                   element={<div>Calendar (Coming Soon)</div>}
